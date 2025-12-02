@@ -1,0 +1,15 @@
+# environment
+.env
+
+# outputs (크롤링 데이터)
+src/outputs/
+
+# node modules
+node_modules/
+
+# logs
+*.log
+
+# system files
+.DS_Store
+Thumbs.db

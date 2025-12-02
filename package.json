@@ -1,0 +1,26 @@
+{
+  "name": "otb-design-research",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/server/index.js",
+  "scripts": {
+    "start": "node ./src/server/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "openai": "^6.9.1",
+    "playwright": "^1.56.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0"
+  }
+}
