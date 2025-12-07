@@ -1,10 +1,5 @@
 /**
- * description:
- *   GPT Vision 기반 이미지 라벨링 (6축 완성형)
- *   - Domain / Channel / ImageCategory / Concept / Effect2D / ColorMood
- *   - Unknown 허용 → 안정성 증가
- *   - Concept vs Effect2D 구분 문장 추가
- *   - Domain vs Channel 혼동 방지
+ * GPT Vision 파일 업로드 방식 (정상 작동 버전)
  */
 
 import OpenAI from "openai";
@@ -14,53 +9,71 @@ import path from "path";
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function labelImage(filePath) {
-    
-    const prompt = `
-    당신은 브랜드 디자인·UX 분석 전문가입니다.
+  // 1) 절대경로 변환
+  const absolutePath = path.resolve(filePath);
+  
+  if (!fs.existsSync(absolutePath)) {
+    throw new Error(`❌ 이미지 파일이 존재하지 않습니다: ${absolutePath}`);
+  }
 
-    아래 이미지를 기반으로 “6가지 속성”을 *정확한 JSON 형식으로만* 출력하세요.
-    해설/문장/설명 절대 금지 — 오직 JSON만.
+  console.log("📂 분석할 이미지:", absolutePath);
 
-    규칙
-    - 값이 불명확하거나 확신이 없으면 "Unknown"을 사용
-    - Domain은 산업 카테고리 (Beauty / Fashion / F&B / Tech / Living …)
-    - Channel은 페이지/콘텐츠의 종류 (PDP / Landing / SNS Feed / Magazine / Lookbook …)
-    - Concept은 분위기·브랜드 톤
-    - Effect2D는 시각적 후처리/질감 (Concept과 혼동 금지)
-    - ColorMood는 색상 톤
-
-    출력 필드 구조 (절대 변경 금지)
-
+  // 2) 이미지를 base64로 인코딩
+  const imageBuffer = fs.readFileSync(absolutePath);
+  const base64Image = imageBuffer.toString('base64');
+  const mimeType = 'image/png'; // 또는 'image/jpeg'
+  
+  const prompt = `
+    아래 이미지를 6가지 속성으로 JSON만 출력:
     {
-        "Domain": "",
-        "Channel": "",
-        "ImageCategory": "",
-        "Concept": "",
-        "Effect2D": "",
-        "ColorMood": ""
+      "Domain": "",
+      "Channel": "",
+      "ImageCategory": "",
+      "Concept": "",
+      "Effect2D": "",
+      "ColorMood": ""
     }
   `;
 
+  // 3) Vision 분석 (base64 방식)
   const res = await client.chat.completions.create({
-    model: "gpt-4.1-mini",
+    model: "gpt-4o-mini", // 🔥 모델명 확인 (gpt-4.1-mini는 없어요)
     messages: [
-      { role: "user", content: prompt },
       {
         role: "user",
         content: [
           {
-            type: "input_image",
-            image_url: `file://${filePath}`
+            type: "text",
+            text: prompt
+          },
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:${mimeType};base64,${base64Image}`
+            }
           }
         ]
       }
-    ]
+    ],
+    max_tokens: 500
   });
 
-  const json = JSON.parse(res.choices[0].message.content);
+  const raw = res.choices[0].message.content.trim();
+  console.log("📝 GPT 응답:", raw);
+  
+  // 4) JSON 파싱 (마크다운 코드블록 제거)
+  let jsonText = raw;
+  if (raw.startsWith('```')) {
+    jsonText = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  }
+  
+  const json = JSON.parse(jsonText);
 
+  // 5) 저장
   const savePath = path.join("src/outputs/meta", `label-${Date.now()}.json`);
+  fs.mkdirSync(path.dirname(savePath), { recursive: true });
   fs.writeFileSync(savePath, JSON.stringify(json, null, 2));
 
+  console.log("✅ 저장 완료:", savePath);
   return json;
 }

@@ -1,15 +1,15 @@
+# node
+node_modules/
+
 # environment
 .env
 
-# outputs (크롤링 데이터)
+# outputs
 src/outputs/
-
-# node modules
-node_modules/
 
 # logs
 *.log
 
-# system files
+# OS
 .DS_Store
 Thumbs.db

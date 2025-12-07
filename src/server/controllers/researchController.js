@@ -47,7 +47,13 @@ export async function generateResearchV1(brief) {
     messages: [{ role: "user", content: prompt }],
   });
 
-  const output = JSON.parse(res.choices[0].message.content);
+  let raw = res.choices[0].message.content;
+
+  // 코드블록 제거
+  raw = raw.replace(/```json|```/g, "").trim();
+
+  // 파싱
+  const output = JSON.parse(raw);
 
   const savePath = path.join("src/outputs/packets", `v1-${Date.now()}.json`);
   fs.writeFileSync(savePath, JSON.stringify(output, null, 2));
@@ -75,7 +81,7 @@ ${text.cleaned_text?.slice(0, 5000)}
 `;
 
   const res = await client.chat.completions.create({
-    model: "gpt-4.1",
+    model: "gpt-4.1-mini",
     messages: [{ role: "user", content: prompt }],
   });
 
