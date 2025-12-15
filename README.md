@@ -12,9 +12,6 @@
 - DesignOps: GPT Vision 이미지 라벨링
 
 ## 실행 방법
-1. 이미지 크롤링: `node scripts/crawlBatch.js`
-2. 배치 라벨링: `curl -X POST http://localhost:3000/batch-label`
-3. Notion 동기화: `curl -X POST http://localhost:3000/sync-notion`
 
 ## 데이터 구조
 - metadata.csv: 180행 × 9열
