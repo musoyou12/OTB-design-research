@@ -21,30 +21,24 @@ export function buildImagePrompt(researchV2) {
   const domain =
     researchV2.domain ||
     researchV2.domainSummary ||
-    researchV2?.meta?.domain ||
-    "F&B";
+    researchV2?.meta?.domain;
 
   const channel =
     researchV2.channel ||
     researchV2.mainChannel ||
-    researchV2?.meta?.channel ||
-    "Landing page";
+    researchV2?.meta?.channel;
 
   const concept =
-    researchV2?.visual?.concept ||
-    researchV2.concept ||
-    researchV2?.toneStyle?.concept ||
-    "Minimal, clean layout";
+    researchV2?.visual?.concept
+    researchV2?.toneStyle?.concept;
 
   const colorMood =
     researchV2?.visual?.colorMood ||
-    researchV2.colorMood ||
-    "Warm natural colors";
+    researchV2.colorMood;
 
   const tone =
     researchV2.brandTone ||
-    researchV2?.toneStyle?.label ||
-    "Modern, friendly, calm";
+    researchV2?.toneStyle?.label;
 
   // 2) ComfyUI text prompt 구성
   const positive = [

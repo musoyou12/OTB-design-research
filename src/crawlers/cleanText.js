@@ -4,7 +4,7 @@
  *
  * output:
  *   /src/outputs/text/clean-*.json
- */
+ **/
 
 import { load } from "cheerio";
 import fs from "fs/promises";

@@ -43,7 +43,7 @@ export async function generateResearchV1(brief) {
     JSON만 출력하세요.
     `;
   const res = await client.chat.completions.create({
-    model: "gpt-4.1-mini",
+    model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -81,7 +81,7 @@ ${text.cleaned_text?.slice(0, 5000)}
 `;
 
   const res = await client.chat.completions.create({
-    model: "gpt-4.1-mini",
+    model: "gpt-4o-mini",
     messages: [{ role: "user", content: prompt }],
   });
 

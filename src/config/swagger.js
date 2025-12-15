@@ -1,7 +1,7 @@
 import swaggerUi from "swagger-ui-express";
-import swaggerJsdoc from "swagger-jsdoc";
+import swaggerJSDoc from "swagger-jsdoc";
 
-export const swaggerSpec = swaggerJsdoc({
+export const swaggerSpec = swaggerJSDoc({
   definition: {
     openapi: "3.0.0",
     info: {
@@ -10,7 +10,11 @@ export const swaggerSpec = swaggerJsdoc({
       description: "ResearchOps 자동화 API 스펙",
     },
   },
-  apis: ["./src/server/index.js"], // Swagger 주석 위치
+  apis: ["./src/server/index.js"], // 절대경로 또는 상대경로 정확히 지정 필요
 });
 
-export const swaggerUiHandler = swaggerUi;
+// swagger-ui-express의 serve, setup 그대로 export
+export const swaggerUiHandler = {
+  serve: swaggerUi.serve,
+  setup: swaggerUi.setup,
+};

@@ -68,20 +68,24 @@ export async function labelImage(filePath) {
   const raw = res.choices[0].message.content.trim();
   const labels = parseResponse(raw);
 
-  // 결과 구성
   const result = {
     filePath: absolutePath,
     labels,
     labeledAt: new Date().toISOString()
   };
-
   // 저장
   const savePath = path.join("src/outputs/meta", `label-${Date.now()}.json`);
   fs.mkdirSync(path.dirname(savePath), { recursive: true });
   fs.writeFileSync(savePath, JSON.stringify(result, null, 2));
 
-  return result;
+  // 🔥 savePath 반드시 포함해서 반환
+  return {
+    ...result,
+    savePath
+  };
+
 }
+
 
 // ============================================
 // 프롬프트 생성

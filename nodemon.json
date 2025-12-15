@@ -1,0 +1,10 @@
+{
+  "watch": ["src"],
+  "ignore": [
+    "src/outputs/*",
+    "src/outputs/**",
+    ".env"
+  ],
+  "ext": "js,json",
+  "exec": "node src/server/index.js"
+}
