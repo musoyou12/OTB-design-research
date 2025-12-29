@@ -15,6 +15,7 @@ const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function findCompetitorsByBrief(brief) {
   const prompt = `
+  
 브리프를 기반으로 경쟁사를 3~5개 추천해줘.
 형식은 JSON 배열만 출력:
 

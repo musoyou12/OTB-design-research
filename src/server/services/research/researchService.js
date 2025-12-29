@@ -11,10 +11,10 @@
  *   server/controllers/researchController.js
  */
 
-import { generateResearchV1, generateResearchV2 } from "../controllers/researchController.js";
-import { crawl } from "../../crawlers/textCrawler.js";
-import { extractCleanText } from "../../crawlers/cleanText.js";
-import { labelImage } from "./labelService.js";
+import { generateResearchV1, generateResearchV2 } from "../../controllers/researchController.js";
+import { crawl } from "../../../crawlers/textCrawler.js";
+import { extractCleanText } from "../../../crawlers/cleanText.js";
+import { labelImage } from "../label/labelService.js";
 import path from "path";
 
 export const researchService = {

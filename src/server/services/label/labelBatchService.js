@@ -19,7 +19,7 @@
 
 import fs from "fs";
 import path from "path";
-import { labelImage, LABEL_SCHEMA } from "./labelService.js";
+import { labelImage, LABEL_SCHEMA } from "../labelService.js";
 
 // ============================================
 // 배치 라벨링
