@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DesignReference",
+  "type": "object",
+  "required": ["id", "source", "domain", "captured_at"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "type": "string" },
+    "domain": { "type": "string" },
+    "brand_name": { "type": "string" },
+    "tone_manner": { "type": "string" },
+    "layout_type": { "type": "string" },
+    "captured_at": { "type": "string", "format": "date-time" }
+  }
+}

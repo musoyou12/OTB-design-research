@@ -13,3 +13,6 @@ src/outputs/
 # OS
 .DS_Store
 Thumbs.db
+
+# local notes / explanations
+python-pipeline/data/raw/설명.txt

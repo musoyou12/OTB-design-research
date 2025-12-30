@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TrendSignal",
+  "type": "object",
+  "required": [
+    "id",
+    "source",
+    "keyword",
+    "signal_type",
+    "signal_strength",
+    "captured_at",
+    "run_id"
+  ],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "source": { "type": "string" },
+    "keyword": { "type": "string" },
+    "signal_type": {
+      "type": "string",
+      "enum": ["WHY", "INTENT", "HOW"]
+    },
+    "signal_strength": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "region": { "type": "string" },
+    "related_keywords": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "captured_at": { "type": "string", "format": "date-time" },
+    "run_id": { "type": "string", "format": "uuid" }
+  }
+}

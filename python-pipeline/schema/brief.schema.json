@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ClientBrief",
+  "type": "object",
+  "required": [
+    "project_id",
+    "domain",
+    "target_audience",
+    "business_goal",
+    "constraints"
+  ],
+  "properties": {
+    "project_id": { "type": "string", "format": "uuid" },
+    "domain": { "type": "string" },
+    "target_audience": { "type": "string" },
+    "business_goal": { "type": "string" },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "budget": { "type": "string" },
+        "timeline": { "type": "string" },
+        "tech": { "type": "string" }
+      }
+    },
+    "competitors": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "brand_values": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "risk_tolerance": {
+      "type": "string",
+      "enum": ["conservative", "balanced", "experimental"]
+    }
+  }
+}
