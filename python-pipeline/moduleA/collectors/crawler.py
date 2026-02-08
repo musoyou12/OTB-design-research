@@ -259,14 +259,7 @@ RSS_SOURCES = [
         "language": "en"
     },
     
-    # SaaS / B2B
-    {
-        "name": "SaaS Design",
-        "url": "https://saasdesign.io/feed",
-        "category": "SaaS UI/UX",
-        "domain": "SaaS",
-        "language": "en"
-    },
+
 ]
 
 
@@ -325,7 +318,7 @@ def crawl_news(run_id: str, max_per_source: int = 20):
 def crawl_google_trends(run_id: str):
     pytrends = TrendReq(hl="en-US", tz=360)
 
-    # Enhanced keywords (OTB 도메인 연결)
+    # Enhanced keywords
     keywords = [
         # 기존
         "web design",
