@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OTB — Research Packet Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --a:#ff5c1a;--ab:#ff7a3d;--a10:rgba(255,92,26,.1);--a20:rgba(255,92,26,.2);
+  --bg:#ffffff;--bg2:#f5f5f5;--bg3:#efefef;--bg4:#e8e8e8;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --w:#111111;--wm:#444444;--wd:#888888;
+  --fd:'Syne',sans-serif;--fk:'DM Sans',sans-serif;
+  --r:4px;--r2:8px;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#f0f0f3;color:var(--w);font-family:var(--fk)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--a);border-radius:0}
+
+/* HEADER */
+header{position:fixed;top:0;left:0;right:0;z-index:100;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:rgba(8,8,8,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.logo{font-family:var(--fd);font-weight:800;font-size:32px;letter-spacing:-.04em;color:#fff;-webkit-text-stroke:0px;cursor:pointer;display:flex;align-items:center;gap:3px;line-height:1;transition:color .2s,-webkit-text-stroke .2s}.logo:hover{color:transparent;-webkit-text-stroke:.3px #fff}
+.logo span{color:var(--a);-webkit-text-stroke:0px;transition:color .2s,-webkit-text-stroke .2s}.logo:hover span{color:transparent;-webkit-text-stroke:.3px #fff}
+.hright{display:flex;align-items:center;gap:16px}
+.preset-label{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--wd)}
+.preset-btns{display:flex;gap:4px}
+.preset-btn{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border:1px solid var(--border);border-radius:20px;color:var(--wd);cursor:pointer;transition:all .2s;background:transparent}
+.preset-btn:hover,.preset-btn.active{border-color:var(--a20);color:var(--a);background:var(--a10)}
+.hbadge{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--a20);border-radius:20px;color:var(--a);background:var(--a10)}
+
+/* LAYOUT */
+.app{display:flex;height:100vh;padding-top:52px}
+
+/* LEFT PANEL */
+.left{width:300px;flex-shrink:0;border-right:1px solid rgba(0,0,0,.08);display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.left-head{height:48px;padding:0 18px;border-bottom:1px solid rgba(0,0,0,.08);flex-shrink:0;display:flex;flex-direction:row;align-items:center;justify-content:space-between}
+.lh-title{font-family:var(--fd);font-size:14px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+.lh-sub{font-size:8px;color:var(--wd);letter-spacing:.02em;margin-top:1px}
+.left-body{flex:1;overflow-y:auto;padding:16px 20px;scrollbar-width:none;-ms-overflow-style:none}.left-body::-webkit-scrollbar{display:none}
+.form-section{margin-bottom:20px}
+.fs-label{font-size:8px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--a);margin-bottom:8px;display:block}
+.field{margin-bottom:10px}
+.field label{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--wd);display:block;margin-bottom:4px}
+.field input,.field textarea,.field select{width:100%;background:#f8f8f8;border:1px solid rgba(0,0,0,.08);border-radius:var(--r);padding:6px 10px;font-size:11px;color:#111;font-family:var(--fk);outline:none;transition:border-color .2s;resize:none}
+.field input:focus,.field textarea:focus{border-color:rgba(255,92,26,.35)}
+.field input::placeholder,.field textarea::placeholder{color:var(--wd)}
+.field textarea{min-height:60px;line-height:1.5}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.generate-btn{width:100%;padding:11px;background:var(--a);border:none;border-radius:var(--r);font-family:var(--fd);font-size:12px;font-weight:700;letter-spacing:.04em;color:#fff;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.generate-btn:hover{background:var(--ab)}
+.generate-btn svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
+.generate-btn:disabled{background:var(--bg4);color:var(--wd);cursor:not-allowed}
+.left-foot{padding:10px 18px;border-top:1px solid rgba(0,0,0,.08);border-right:3px solid #111;flex-shrink:0}
+.reset-icon{width:28px;height:28px;border-radius:50%;border:1px solid rgba(0,0,0,.1);background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;flex-shrink:0}.reset-icon:hover{border-color:var(--a);background:rgba(255,92,26,.06);transform:rotate(45deg)}.reset-icon svg{width:13px;height:13px;stroke:#888;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s}.reset-icon:hover svg{stroke:var(--a)}
+
+/* RIGHT PANEL */
+.right{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;background:#fff}
+
+/* EMPTY STATE */
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:var(--wd);text-align:center;padding:40px}
+.es-icon{width:48px;height:48px;border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto}
+.es-icon svg{width:20px;height:20px;stroke:var(--wd);fill:none;stroke-width:1.2;stroke-linecap:round}
+.es-title{font-family:var(--fd);font-size:15px;font-weight:700;color:var(--wm)}
+.es-sub{font-size:11px;line-height:1.6;max-width:260px}
+
+/* STEP LOADER */
+.step-loader{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:32px;padding:40px}
+.step-loader.show{display:flex}
+.sl-title{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--wm);letter-spacing:-.01em}
+.sl-steps{display:flex;flex-direction:column;gap:8px;width:100%;max-width:320px}
+.sl-step{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg2);transition:all .4s}
+.sl-step.active{border-color:var(--a20);background:var(--a10)}
+.sl-step.done{border-color:rgba(255,255,255,.1);opacity:.5}
+.ss-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .3s}
+.sl-step.active .ss-dot{background:var(--a);box-shadow:0 0 8px var(--a)}
+.sl-step.done .ss-dot{background:rgba(255,255,255,.3)}
+.ss-label{font-size:11px;font-weight:600;color:var(--wd);transition:color .3s}
+.sl-step.active .ss-label{color:var(--w)}
+.ss-status{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--wd);margin-left:auto}
+.sl-step.active .ss-status{color:var(--a)}
+.sl-step.done .ss-status{color:rgba(255,255,255,.2)}
+.sl-bar{width:100%;max-width:320px;height:1px;background:var(--border);border-radius:1px;overflow:hidden}
+.sl-bar-fill{height:100%;background:var(--a);width:0%;transition:width .5s ease;box-shadow:0 0 8px var(--a)}
+
+/* ERROR STATE */
+.error-state{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;text-align:center}
+.error-state.show{display:flex}
+.err-icon{font-size:32px}
+.err-title{font-family:var(--fd);font-size:14px;font-weight:700;color:#ff6b6b}
+.err-sub{font-size:11px;color:var(--wd);max-width:260px;line-height:1.6}
+.err-retry{padding:8px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);font-size:10px;font-weight:600;color:var(--wd);cursor:pointer;transition:all .2s}
+.err-retry:hover{border-color:var(--border2);color:var(--w)}
+
+/* RESULTS */
+.results{flex:1;display:none;flex-direction:column;overflow:hidden}
+.results.show{display:flex}
+
+/* TABS */
+.tabs{display:flex;align-items:center;gap:0;padding:0 24px;border-bottom:1px solid rgba(0,0,0,.08);height:48px;flex-shrink:0;background:#fff}
+.tab{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--wd);cursor:pointer;padding:0 14px;height:100%;display:flex;align-items:center;gap:6px;border-bottom:2px solid transparent;transition:all .2s;position:relative;top:1px}
+.tab:hover{color:var(--wm)}
+.tab.active{color:#111;border-bottom-color:var(--a)}
+.tab-badge{font-size:8px;background:var(--a10);border:1px solid var(--a20);color:var(--a);padding:1px 5px;border-radius:10px}
+.tab-content{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none}.tab-content::-webkit-scrollbar{display:none}
+
+/* PACKET TAB */
+.packet-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:24px}
+.packet-card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:var(--r2);padding:18px}
+.packet-card.full{grid-column:1/-1}
+.pc-label{font-size:8px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--a);margin-bottom:10px}
+.pc-summary{font-size:13px;line-height:1.7;color:var(--wm)}
+.keyword-list{display:flex;flex-wrap:wrap;gap:6px}
+.keyword{font-size:10px;font-weight:600;padding:4px 10px;background:var(--bg4);border:1px solid var(--border);border-radius:20px;color:var(--wm);letter-spacing:.04em}
+.tone-list{display:flex;flex-direction:column;gap:8px}
+.tone-item{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--wm);line-height:1.5}
+.tone-dot{width:4px;height:4px;border-radius:50%;background:var(--a);flex-shrink:0;margin-top:6px}
+.pattern-list{display:flex;flex-direction:column;gap:8px}
+.pattern-item{padding:10px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);cursor:pointer;transition:border-color .2s}
+.pattern-item:hover{border-color:var(--a20)}
+.pi-title{font-size:11px;font-weight:600;color:var(--w);margin-bottom:3px}
+.pi-desc{font-size:10px;color:var(--wd)}
+
+/* COMPETITORS TAB — Mobbin style */
+.mobbin-layout{display:flex;height:100%;overflow:hidden;min-height:0}
+
+/* Sidebar */
+.mobbin-sidebar{width:192px;flex-shrink:0;border-right:1px solid rgba(0,0,0,.08);display:flex;flex-direction:column;overflow:hidden;background:#fafafa}
+.msb-head{height:48px;padding:0 12px;border-bottom:1px solid rgba(0,0,0,.08);flex-shrink:0;display:flex;flex-direction:column;justify-content:center;background:#fff}
+.msb-title{font-size:8px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--wd)}
+.msb-count{font-size:8px;color:var(--wd);margin-top:2px}
+.msb-list{overflow-y:auto;flex:1;padding:8px;scrollbar-width:none;-ms-overflow-style:none}.msb-list::-webkit-scrollbar{display:none}
+.msb-item{padding:10px;border-radius:var(--r);cursor:pointer;transition:all .18s;margin-bottom:4px;border:1px solid transparent}
+.msb-item:hover{background:var(--bg3)}
+.msb-item.active{background:var(--a10);border-color:var(--a20)}
+.msbi-name{font-size:11px;font-weight:600;color:var(--wm);margin-bottom:2px}
+.msb-item.active .msbi-name{color:var(--a)}
+.msbi-url{font-size:9px;color:var(--wd);margin-bottom:6px}
+.msbi-bar{display:flex;gap:3px}
+.msbi-score{display:flex;flex-direction:column;gap:1px;flex:1}
+.msbi-sv{font-size:8px;font-weight:700;color:var(--wm)}
+.msbi-track{height:2px;background:var(--border);border-radius:1px}
+.msbi-fill{height:100%;border-radius:1px;background:var(--a)}
+
+/* Main */
+.mobbin-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.mm-topbar{height:48px;padding:0 16px;border-bottom:1px solid rgba(0,0,0,.08);flex-shrink:0;display:flex;align-items:center;gap:12px;background:#fff}
+.mm-site-info{flex:1}
+.mm-name{font-family:var(--fd);font-size:14px;font-weight:700;letter-spacing:-.02em}
+.mm-url{font-size:9px;color:var(--wd);margin-top:1px}
+.mm-scores{display:flex;gap:10px}
+.mm-score{text-align:center}
+.mms-val{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--w)}
+.mms-label{font-size:7px;color:var(--wd);letter-spacing:.08em;text-transform:uppercase}
+.mm-filterbar{padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.mf-label{font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--wd);flex-shrink:0}
+.mf-btns{display:flex;gap:4px;flex-wrap:wrap}
+.mf-btn{font-size:8px;font-weight:600;letter-spacing:.06em;padding:3px 9px;border:1px solid var(--border);border-radius:20px;color:var(--wd);cursor:pointer;transition:all .18s;background:transparent}
+.mf-btn:hover{border-color:var(--border2);color:var(--wm)}
+.mf-btn.active{border-color:var(--a20);color:var(--a);background:var(--a10)}
+.mm-content{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 16px}
+
+/* SW strip */
+.sw-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.sw-box{padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r)}
+.swb-label{font-size:7px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px}
+.swb-label.s{color:#3b82f6}.swb-label.w{color:#f87171}.swb-label.t{color:var(--a)}
+.swb-item{font-size:9px;color:#444;line-height:1.4;display:flex;gap:4px;margin-bottom:3px}
+.swb-dot{width:3px;height:3px;border-radius:50%;flex-shrink:0;margin-top:4px}
+
+/* Section label row */
+.section-count{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--wd);margin-bottom:10px}
+
+/* Page cards grid — Mobbin style */
+.pages-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.pg-card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:var(--r2);overflow:hidden;cursor:pointer;transition:all .2s;opacity:0;transform:translateY(8px)}
+.pg-card.mounted{opacity:1;transform:none;transition:opacity .35s ease, transform .35s ease, border-color .2s}
+.pg-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+
+/* Mockup frame */
+.pgc-mockup{height:140px;background:var(--bg3);position:relative;overflow:hidden;border-bottom:1px solid var(--border)}
+.pgc-browser{position:absolute;top:0;left:0;right:0;height:16px;background:rgba(255,255,255,.04);display:flex;align-items:center;padding:0 6px;gap:4px;border-bottom:1px solid var(--border)}
+.pgc-dot{width:4px;height:4px;border-radius:50%}
+.pgc-dot.r{background:#ff5f57}.pgc-dot.y{background:#febc2e}.pgc-dot.g{background:#28c840}
+.pgc-urlbar{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:2px;margin:0 6px}
+.pgc-screen{position:absolute;top:16px;left:0;right:0;bottom:0}
+.pgc-section-tag{position:absolute;bottom:6px;left:6px;font-size:7px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--a);background:rgba(8,8,8,.85);backdrop-filter:blur(4px);padding:2px 6px;border-radius:3px;border:1px solid var(--a20)}
+
+/* Card info */
+.pgc-info{padding:10px 12px}
+.pgc-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px}
+.pgc-tag{font-size:7px;font-weight:600;letter-spacing:.06em;padding:1px 6px;background:var(--bg4);border:1px solid var(--border);border-radius:10px;color:var(--wd)}
+.pgc-insight{font-size:9px;color:var(--a);font-weight:600;letter-spacing:.04em;border-top:1px solid var(--border);padding-top:6px;margin-top:4px;display:flex;align-items:flex-start;gap:4px}
+.pgc-insight::before{content:"→";flex-shrink:0;color:var(--a)}
+
+/* /* CONCEPTS TAB *//* CONCEPTS TAB */
+.concept-toggle{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.variant-btn{font-size:10px;font-weight:700;padding:6px 18px;border:1px solid var(--border);border-radius:var(--r);color:var(--wd);cursor:pointer;transition:all .2s;background:transparent;letter-spacing:.06em;position:relative}
+.variant-btn.active{border-color:var(--a);color:var(--a);background:var(--a10)}
+.variant-label{font-size:9px;font-weight:600;color:var(--wd);margin-left:2px;letter-spacing:.01em}
+.vbtn-tooltip{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:8px 12px;font-size:10px;font-weight:400;color:rgba(255,255,255,.7);pointer-events:none;opacity:0;transition:opacity .15s;z-index:100;letter-spacing:.01em;line-height:1.6;text-align:center;width:220px;white-space:normal}
+.vbtn-tooltip::before{content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-bottom-color:#1a1a1a}
+.variant-btn:hover .vbtn-tooltip{opacity:1}
+.concept-body{padding:24px}
+.concept-card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:var(--r2);overflow:hidden}
+.concept-card-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.cv-badge{font-family:var(--fd);font-size:20px;font-weight:800;color:var(--a);min-width:28px}
+.cv-info{flex:1}
+.cv-label{font-family:var(--fd);font-size:14px;font-weight:700;margin-bottom:3px}
+.cv-liner{font-size:11px;color:#666}
+.copy-prompt-btn{font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 12px;border:1px solid rgba(0,0,0,.1);border-radius:var(--r);color:#888;cursor:pointer;transition:all .2s;background:transparent;display:flex;align-items:center;gap:5px;flex-shrink:0}
+.copy-prompt-btn:hover{border-color:#555;color:#111}
+.copy-prompt-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2}
+.concept-card-body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.cb-section{padding:18px 20px}
+.cb-section+.cb-section{border-left:1px solid var(--border)}
+.cbs-label{font-size:8px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--a);margin-bottom:10px}
+.layout-flow{display:flex;flex-direction:column;gap:4px}
+.lf-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--wm)}
+.lf-num{font-size:8px;font-weight:700;color:var(--a);min-width:16px}
+.lf-line{height:1px;width:16px;background:var(--border)}
+.copy-list{display:flex;flex-direction:column;gap:6px}
+.copy-item{padding:8px 10px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--border);font-size:11px;color:var(--wm);line-height:1.5;font-style:italic}
+
+/* DETAIL DRAWER */
+.drawer-overlay{position:fixed;inset:0;z-index:200;pointer-events:none;display:flex;justify-content:flex-end}
+.drawer-overlay.open{pointer-events:auto}
+.drawer-bg{position:absolute;inset:0;background:rgba(0,0,0,.5);opacity:0;transition:opacity .3s}
+.drawer-overlay.open .drawer-bg{opacity:1}
+.drawer{width:420px;height:100%;background:#fff;border-left:1px solid rgba(0,0,0,.08);transform:translateX(100%);transition:transform .35s cubic-bezier(.16,1,.3,1);overflow-y:auto;position:relative;z-index:1;padding:24px}
+.drawer-overlay.open .drawer{transform:translateX(0)}
+.drawer-close{position:sticky;top:0;display:flex;justify-content:flex-end;margin-bottom:16px;background:var(--bg2);z-index:1}
+.dc-btn{width:28px;height:28px;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.dc-btn:hover{border-color:var(--border2);background:var(--bg3)}
+.dc-btn svg{width:12px;height:12px;stroke:var(--wd);fill:none;stroke-width:2;stroke-linecap:round}
+.drawer-content{}
+.dr-tag{font-size:8px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--a);margin-bottom:10px}
+.dr-title{font-family:var(--fd);font-size:18px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px;line-height:1.2}
+.dr-sub{font-size:12px;color:var(--wd);margin-bottom:20px;line-height:1.5}
+.dr-divider{height:1px;background:var(--border);margin:16px 0}
+.dr-section{margin-bottom:16px}
+.drs-label{font-size:8px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--a);margin-bottom:8px}
+.dr-text{font-size:12px;color:var(--wm);line-height:1.7}
+.dr-list{display:flex;flex-direction:column;gap:6px}
+.dr-list-item{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--wm);line-height:1.5}
+.dr-prompt{padding:12px;background:#f5f5f5;border:1px solid rgba(0,0,0,.08);border-radius:var(--r);font-size:10px;color:#444;line-height:1.6;font-family:monospace}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);z-index:999;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r2);padding:10px 18px;font-size:11px;font-weight:600;color:var(--w);display:flex;align-items:center;gap:8px;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast svg{width:12px;height:12px;stroke:var(--a);fill:none;stroke-width:2.5;stroke-linecap:round}
+
+/* PROMPTS TAB — m2z1 style */
+.prompts-outer{padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+.prompt-topbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ptb-label{font-size:8px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--wd);flex-shrink:0}
+.psb-btns{display:flex;gap:4px;flex-wrap:wrap}
+.psb-btn{font-size:9px;font-weight:500;padding:4px 10px;border:1px solid var(--border);border-radius:20px;color:var(--wd);cursor:pointer;transition:all .18s;background:transparent}
+.psb-btn:hover{border-color:var(--border2);color:var(--wm)}
+.psb-btn.active{border-color:var(--a20);color:var(--a);background:var(--a10)}
+.copy-all-btn{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:6px 14px;border:1px solid var(--a20);border-radius:var(--r);color:var(--a);background:var(--a10);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;flex-shrink:0}
+.copy-all-btn:hover{background:var(--a20)}
+.copy-all-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2}
+
+/* Grid */
+.prompts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px}
+.pm-card{position:relative;overflow:hidden;cursor:pointer;aspect-ratio:4/3;background:#0a0a0a}
+.pm-card:nth-child(1){grid-column:span 1;aspect-ratio:1/1}
+.pm-card:nth-child(2){grid-column:span 1;aspect-ratio:1/1}
+.pm-card:nth-child(3){grid-column:span 2;aspect-ratio:16/7}
+.pm-card:nth-child(4){grid-column:span 1;aspect-ratio:4/3}
+.pm-card:nth-child(5){grid-column:span 1;aspect-ratio:4/3}
+
+/* Card visual */
+.pm-visual{position:absolute;inset:0;transition:transform .5s cubic-bezier(.16,1,.3,1)}
+.pm-card:hover .pm-visual{transform:scale(1.04)}
+
+/* Overlay gradient */
+.pm-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.0) 40%,rgba(0,0,0,.85) 100%);opacity:0;transition:opacity .3s}
+.pm-card:hover .pm-overlay{opacity:1}
+
+/* Top label */
+.pm-type-label{position:absolute;top:12px;left:12px;z-index:3;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:20px;backdrop-filter:blur(8px)}
+.pm-type-label.page{background:rgba(96,165,250,.2);color:#93c5fd;border:1px solid rgba(96,165,250,.25)}
+.pm-type-label.component{background:rgba(52,211,153,.2);color:#6ee7b7;border:1px solid rgba(52,211,153,.25)}
+.pm-type-label.style{background:rgba(167,139,250,.2);color:#c4b5fd;border:1px solid rgba(167,139,250,.25)}
+.pm-type-label.interaction{background:rgba(255,92,26,.2);color:#ff8f5e;border:1px solid rgba(255,92,26,.25)}
+.pm-type-label.system{background:rgba(251,191,36,.2);color:#fde68a;border:1px solid rgba(251,191,36,.25)}
+
+/* Title area */
+.pm-card-info{position:absolute;bottom:0;left:0;right:0;z-index:3;padding:16px;transform:translateY(0);opacity:1;transition:all .3s cubic-bezier(.16,1,.3,1);background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 100%)}
+.pm-card:hover .pm-card-info{transform:translateY(0);opacity:1}
+.pm-card-title{font-family:var(--fd);font-size:13px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:8px}
+
+/* Copy button — m2z1 style */
+.pm-copy-btn{display:inline-flex;align-items:center;gap:6px;background:#fff;color:#000;font-size:10px;font-weight:700;letter-spacing:.04em;padding:7px 16px;border-radius:100px;border:none;cursor:pointer;transition:transform .2s,background .2s}
+.pm-copy-btn:hover{background:var(--a);color:#fff;transform:scale(1.05)}
+.pm-copy-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5}
+
+/* Static info (always visible) */
+.pm-static{position:absolute;top:12px;right:12px;z-index:3}
+.pm-stack-pills{display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.pm-stack-pill{font-size:7px;font-weight:600;letter-spacing:.06em;padding:2px 7px;background:rgba(8,8,8,.7);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:rgba(255,255,255,.5)}
+
+/* Detail panel */
+.pm-detail{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.8);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:24px}
+.pm-detail.open{display:flex}
+.pm-detail-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);width:100%;max-width:680px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column}
+.pmdb-head{padding:16px 20px;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:12px;flex-shrink:0;background:#fff}
+.pmdb-type{font-size:8px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;border-radius:3px}
+.pmdb-title{font-family:var(--fd);font-size:15px;font-weight:700;flex:1;color:#111}
+.pmdb-close{width:28px;height:28px;border:1px solid rgba(0,0,0,.1);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.pmdb-close:hover{background:#f0f0f0}
+.pmdb-close svg{width:12px;height:12px;stroke:#888;fill:none;stroke-width:2;stroke-linecap:round}
+.pmdb-body{flex:1;overflow-y:auto;padding:16px 20px;background:#fafafa}
+.pmdb-prompt{font-size:11px;color:#333;line-height:1.8;font-family:'DM Sans',monospace;white-space:pre-wrap;word-break:break-word}
+.pmdb-prompt mark{background:rgba(255,92,26,.15);color:var(--a);border-radius:2px;padding:0 2px}
+.pmdb-prompt .pcp-comment{color:#aaa;font-style:italic}
+.pmdb-foot{padding:12px 20px;border-top:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:8px;flex-shrink:0;background:#fff}
+.pmdb-stack{display:flex;gap:4px;flex:1;flex-wrap:wrap}
+.pmdb-stag{font-size:8px;font-weight:600;padding:2px 7px;background:#f0f0f0;border:1px solid rgba(0,0,0,.08);border-radius:10px;color:#666}
+.pmdb-copy-btn{font-size:10px;font-weight:700;letter-spacing:.06em;padding:8px 20px;background:var(--a);border:none;border-radius:var(--r);color:#fff;cursor:pointer;transition:background .2s;display:flex;align-items:center;gap:6px}
+.pmdb-copy-btn:hover{background:var(--ab)}
+.pmdb-copy-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+
+
+
+/* RUN BUTTON + AI PREVIEW */
+.pm-run-btn{display:inline-flex;align-items:center;gap:6px;background:var(--a);color:#fff;font-size:10px;font-weight:700;letter-spacing:.04em;padding:7px 16px;border-radius:100px;border:none;cursor:pointer;transition:transform .2s,background .2s;margin-left:8px}
+.pm-run-btn:hover{background:var(--ab);transform:scale(1.05)}
+.pm-run-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5}
+.pm-run-btn:disabled{background:var(--bg4);color:var(--wd);cursor:not-allowed;transform:none}
+
+/* AI Result Panel */
+.ai-result-panel{position:fixed;top:52px;right:0;bottom:0;width:0;z-index:250;display:flex;flex-direction:column;background:var(--bg2);border-left:1px solid var(--border);transition:width .35s cubic-bezier(.16,1,.3,1);overflow:hidden}
+.ai-result-panel.open{width:520px}
+.arp-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.arp-status{display:flex;align-items:center;gap:6px;flex:1}
+.arp-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);flex-shrink:0;transition:background .3s}
+.arp-dot.running{background:var(--a);box-shadow:0 0 8px var(--a);animation:pulse 1s ease infinite}
+.arp-dot.done{background:#4ade80}
+.arp-dot.error{background:#f87171}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.arp-label{font-size:10px;font-weight:600;color:var(--wd)}
+.arp-label.running{color:var(--a)}
+.arp-label.done{color:#4ade80}
+.arp-tabs{display:flex;gap:0;margin-left:auto}
+.arp-tab{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border:1px solid var(--border);color:var(--wd);cursor:pointer;transition:all .18s;background:transparent}
+.arp-tab:first-child{border-radius:var(--r) 0 0 var(--r)}
+.arp-tab:last-child{border-radius:0 var(--r) var(--r) 0;border-left:none}
+.arp-tab.active{border-color:var(--a20);color:var(--a);background:var(--a10)}
+.arp-close{width:26px;height:26px;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-left:8px;flex-shrink:0}
+.arp-close:hover{background:var(--bg3)}
+.arp-close svg{width:11px;height:11px;stroke:var(--wd);fill:none;stroke-width:2;stroke-linecap:round}
+.arp-body{flex:1;overflow:hidden;position:relative}
+
+/* Text tab */
+.arp-text{padding:16px;overflow-y:auto;height:100%;display:none}
+.arp-text.active{display:block}
+.arp-stream{font-size:11px;line-height:1.8;color:var(--wm);white-space:pre-wrap;word-break:break-word}
+.arp-stream mark{background:rgba(255,92,26,.15);color:var(--a);border-radius:2px;padding:0 2px}
+.arp-stream strong{color:var(--w);font-weight:600}
+.arp-stream h2{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--w);margin:14px 0 6px;border-bottom:1px solid var(--border);padding-bottom:4px}
+.arp-stream h3{font-size:11px;font-weight:700;color:var(--a);margin:10px 0 4px;letter-spacing:.04em}
+.arp-stream code{background:var(--bg3);border:1px solid var(--border);border-radius:3px;padding:0 4px;font-size:10px;color:#93c5fd}
+.arp-cursor{display:inline-block;width:2px;height:12px;background:var(--a);margin-left:2px;animation:blink .7s step-end infinite;vertical-align:middle}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Code tab */
+.arp-code{height:100%;display:none;flex-direction:column}
+.arp-code.active{display:flex}
+.arp-code-bar{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.arp-lang{font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--a);padding:2px 7px;background:var(--a10);border:1px solid var(--a20);border-radius:3px}
+.arp-copy-code{font-size:8px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border:1px solid var(--border);border-radius:3px;color:var(--wd);cursor:pointer;background:transparent;margin-left:auto;transition:all .18s}
+.arp-copy-code:hover{border-color:var(--border2);color:var(--w)}
+.arp-code-content{flex:1;overflow:auto;padding:14px;background:var(--bg)}
+.arp-code-content pre{font-size:10px;line-height:1.7;color:rgba(242,242,240,.7);font-family:monospace;white-space:pre;margin:0}
+.arp-code-content .kw{color:#c084fc}
+.arp-code-content .str{color:#86efac}
+.arp-code-content .cmt{color:rgba(255,255,255,.25);font-style:italic}
+.arp-code-content .fn{color:#60a5fa}
+.arp-code-content .num{color:#fb923c}
+
+/* Preview tab */
+.arp-preview{height:100%;display:none;flex-direction:column}
+.arp-preview.active{display:flex}
+.arp-preview-bar{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.arp-preview iframe{flex:1;border:none;background:#fff}
+
+/* Skeleton loader */
+.arp-skeleton{padding:16px;display:flex;flex-direction:column;gap:10px}
+.sk-line{height:10px;border-radius:3px;background:linear-gradient(90deg,var(--bg3) 25%,var(--bg4) 50%,var(--bg3) 75%);background-size:400px 100%;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{opacity:0;animation:fadeUp .4s ease forwards}
+.fade-up:nth-child(1){animation-delay:.05s}
+.fade-up:nth-child(2){animation-delay:.1s}
+.fade-up:nth-child(3){animation-delay:.15s}
+.fade-up:nth-child(4){animation-delay:.2s}
+.fade-up:nth-child(5){animation-delay:.25s}
+
+header{background:#080808 !important;color:#f2f2f0 !important}
+.preset-label{color:rgba(242,242,240,.45) !important}
+.preset-btn{color:rgba(242,242,240,.45) !important;border-color:rgba(255,255,255,.12) !important;background:transparent !important}
+.preset-btn:hover,.preset-btn.active{color:var(--a) !important;border-color:var(--a) !important}
+.preset-btn.active{background:var(--a10) !important}
+.hbadge{background:rgba(255,92,26,.15) !important;color:var(--a) !important;border-color:rgba(255,92,26,.3) !important}
+
+/* Hide all scrollbars globally */
+*{scrollbar-width:none;-ms-overflow-style:none}
+*::-webkit-scrollbar{display:none}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="logo" onclick="window.location.href='otb_entry.html'">OTB<span>.</span></div>
+  </div>
+  <div class="hright">
+    <span class="preset-label">Presets</span>
+    <div class="preset-btns">
+      <div class="preset-btn active" data-preset="beauty">Beauty</div>
+      <div class="preset-btn" data-preset="saas">SaaS</div>
+      <div class="preset-btn" data-preset="fashion">Fashion</div>
+      <div class="preset-btn" data-preset="fnb">F&B</div>
+    </div>
+    <span class="hbadge">Demo</span>
+  </div>
+</header>
+
+<div class="app">
+  <!-- LEFT -->
+  <div class="left">
+    <div class="left-head">
+      <div>
+        <div class="lh-title">Research Brief</div>
+        <div class="lh-sub">프로젝트 정보를 입력하면 AI가 분석합니다</div>
+      </div>
+      <div class="reset-icon" onclick="reset()" title="Reset"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></div>
+    </div>
+    <div class="left-body">
+      <div class="form-section">
+        <span class="fs-label">Project</span>
+        <div class="field">
+          <label>프로젝트명 *</label>
+          <input type="text" id="f-name" placeholder="ex. Glow Skincare Renewal">
+        </div>
+        <div class="field">
+          <label>업종 *</label>
+          <input type="text" id="f-industry" placeholder="ex. Beauty / Skincare">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="form-section">
+        <span class="fs-label">Strategy</span>
+        <div class="field">
+          <label>목표 *</label>
+          <input type="text" id="f-goal" placeholder="ex. Landing conversion & trust">
+        </div>
+        <div class="field">
+          <label>타깃 고객층 *</label>
+          <input type="text" id="f-target" placeholder="ex. Women 20-34">
+        </div>
+        <div class="field">
+          <label>채널 *</label>
+          <input type="text" id="f-channel" placeholder="ex. Web, Mobile App">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="form-section">
+        <span class="fs-label">Context</span>
+        <div class="field">
+          <label>제약사항</label>
+          <textarea id="f-constraints" placeholder="ex. Clean, clinical trust, avoid heavy claims"></textarea>
+        </div>
+        <div class="field">
+          <label>경쟁사 URL (선택)</label>
+          <input type="text" id="f-competitor" placeholder="https://competitor.com">
+        </div>
+      </div>
+      <button class="generate-btn" id="generateBtn" onclick="generate()">
+        Generate
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <!-- EMPTY -->
+    <div class="empty-state" id="emptyState">
+      <div class="es-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      </div>
+      <div class="es-title">No packet yet</div>
+      <div class="es-sub">브리프를 입력하고 Generate를 누르면 AI가 리서치 패킷을 생성합니다</div>
+    </div>
+
+    <!-- LOADER -->
+    <div class="step-loader" id="stepLoader">
+      <div class="sl-title">Generating Research Packet...</div>
+      <div class="sl-steps" id="slSteps"></div>
+      <div class="sl-bar"><div class="sl-bar-fill" id="slBarFill"></div></div>
+    </div>
+
+    <!-- ERROR -->
+    <div class="error-state" id="errorState">
+      <div class="err-icon">⚠</div>
+      <div class="err-title">Generation Failed</div>
+      <div class="err-sub">네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.</div>
+      <button class="err-retry" onclick="generate()">다시 시도</button>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results" id="results">
+      <div class="tabs">
+        <div class="tab active" data-tab="packet">
+          <svg style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Packet
+        </div>
+        <div class="tab" data-tab="competitors">
+          Competitors
+          <span class="tab-badge" id="compBadge">0</span>
+        </div>
+        <div class="tab" data-tab="concepts">
+          Concepts
+          <span class="tab-badge">A/B/C</span>
+        </div>
+        <div class="tab" data-tab="prompts">
+          <svg style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          Vibe Prompts
+          <span class="tab-badge" style="background:rgba(255,92,26,.15);border-color:rgba(255,92,26,.3)">NEW</span>
+        </div>
+      </div>
+      <div class="tab-content" id="tabContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="drawer-overlay" id="drawerOverlay">
+  <div class="drawer-bg" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-close">
+      <div class="dc-btn" onclick="closeDrawer()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+    </div>
+    <div class="drawer-content" id="drawerContent"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  Copied to clipboard
+</div>
+
+<script>
+// ── MOCK DATA ──────────────────────────────────────────────
+const PRESETS = {
+  beauty: {
+    brief: {projectName:"Glow Skincare Renewal",industry:"Beauty / Skincare",goal:"Landing conversion & trust building",targetAudience:"Women 20-34, sensitive skin",channel:"Web",constraints:"Clean, clinical trust, avoid heavy claims",competitorUrls:["https://example.com","https://example2.com"]},
+    packet: {
+      keywords:["clean","derma","soft glow","before/after","minimal","trust"],
+      toneGuide:["Calm and clinical, but warm.","Use proof-oriented microcopy.","Avoid exaggerated claims; emphasize process and ingredients."],
+      topPatterns:[{title:"Hero proof strip",desc:"Hero 아래 임상/후기 요약 스트립"},{title:"Ingredient transparency",desc:"성분 카드 + 근거 링크"},{title:"Before/After slider",desc:"전후 비교 슬라이더로 신뢰 강화"}],
+      promptResultSummary:"Clean + Soft Glow 톤으로 신뢰 중심 랜딩 구조 추천. CTA는 '무료 피부 진단' 또는 '성분 분석 보기'가 전환에 유리."
+    },
+    competitors:[
+      {
+        name:"Competitor A", url:"competitor-a.com",
+        scores:{fit:8.4,clarity:9.0,conversion:7.6,innovation:6.2},
+        strengths:["명확한 가치제안","임상 근거 섹션","CTA 위치 일관"],
+        weaknesses:["스토리텔링 약함","차별 포인트 불명확"],
+        takeaways:["Hero에 근거 스트립 추가","FAQ를 상단으로 올려 이탈 감소"],
+        pages:[
+          {section:"Hero",type:"hero",tags:["Full-bleed image","Centered CTA","Trust badge"],annotation:"임상 인증 뱃지를 Hero에 바로 노출. 신뢰 신호가 첫 3초 안에 인식됨. CTA 문구는 '무료 피부 진단 받기'로 심리적 장벽을 낮춤.",insight:"신뢰 뱃지 → Hero 직하단에 배치"},
+          {section:"Navigation",type:"nav",tags:["Sticky","Minimal","Transparent→White"],annotation:"스크롤 시 배경이 흰색으로 전환. 모바일에서 햄버거 없이 아이콘만 사용해 공간 확보.",insight:"Sticky 전환 타이밍을 Hero 높이 기준으로"},
+          {section:"Proof Strip",type:"strip",tags:["Social proof","Numbers","Logos"],annotation:"'1M+ 고객', '피부과 추천 98%' 숫자 집중. Hero 바로 아래 배치로 초기 이탈률 약 20% 감소 추정.",insight:"숫자 포맷: 단위+% 혼합이 설득력 높음"},
+          {section:"Ingredients",type:"grid",tags:["Card grid","Expandable","Clinical links"],annotation:"성분마다 임상 근거 링크 제공. 투명성이 핵심 차별점. 클릭 시 성분 상세 모달.",insight:"성분 카드 → 3열 그리드 + hover expand"},
+          {section:"Before/After",type:"comparison",tags:["Slider","Real users","Timeline"],annotation:"실제 사용자 Before/After 슬라이더. 30일/60일/90일 타임라인 선택 가능. 구체성이 신뢰를 높임.",insight:"타임라인 선택 UI가 설득력 극대화"},
+          {section:"CTA Footer",type:"cta",tags:["Sticky CTA","Free trial","Urgency"],annotation:"페이지 하단 sticky 바 + 푸터에 동일 CTA 반복. '7일 무료 체험' 프레임. 전환 기회를 마지막까지 유지.",insight:"Sticky 하단바 → 스크롤 50% 지점부터"}
+        ]
+      },
+      {
+        name:"Competitor B", url:"competitor-b.com",
+        scores:{fit:7.1,clarity:7.8,conversion:8.3,innovation:8.9},
+        strengths:["인터랙티브 성분 맵","소셜 증명 강화","모바일 최적화"],
+        weaknesses:["텍스트 과밀","초기 로딩 느림"],
+        takeaways:["Interactive quiz 도입 검토","리뷰 카드 디자인 참고"],
+        pages:[
+          {section:"Hero",type:"hero",tags:["Video bg","Quiz CTA","Personalized"],annotation:"피부 타입 퀴즈를 Hero CTA로 활용. '나에게 맞는 제품 찾기' 프레임이 개인화 니즈를 자극. 이탈률 낮음.",insight:"Quiz entry → 2단계 이하로 짧게"},
+          {section:"Ingredient Map",type:"interactive",tags:["World map","Hover","Origin story"],annotation:"성분 원산지 세계 지도 인터랙션. 마우스 오버 시 성분 설명 팝업. 체류 시간 증가에 효과적.",insight:"지도 인터랙션 → SVG 기반 경량 구현"},
+          {section:"Video Reviews",type:"social",tags:["Video","Filter","Before/After"],annotation:"텍스트 아닌 영상 리뷰 중심. 피부 타입별 필터로 공감 유도. 재생률 62% 이상 추정.",insight:"리뷰 필터 → 피부 타입 기준이 효과적"},
+          {section:"Mobile CTA",type:"mobile",tags:["Floating button","One-tap","Simplified"],annotation:"모바일 플로팅 '지금 시작' 버튼. 스크롤 위치 무관하게 항상 노출. 탭 대상 크기 44px 이상.",insight:"플로팅 CTA → 스크롤 20% 이후 등장"}
+        ]
+      }
+    ],
+    concepts:[
+      {variant:"A",label:"Basic (Conversion-first)",oneLiner:"명확한 가치제안 + 짧은 섹션 + 강한 CTA",layout:["Hero","Proof strip","Benefits","Before/After","FAQ","CTA"],copySamples:["민감 피부도 편안한 리뉴얼","임상 근거로 확인하세요"],prompt:"Design a clean skincare landing page focused on conversion. Use clinical white space, soft warm tones, and proof-first hierarchy."},
+      {variant:"B",label:"Polished (Brand + Trust)",oneLiner:"브랜드 톤 강화 + 신뢰 콘텐츠 확장",layout:["Hero","Story","Ingredient cards","Dermatest","Reviews","CTA"],copySamples:["피부가 다시 숨 쉬는 시간","성분과 과정은 투명하게"],prompt:"Design a polished brand-forward skincare landing page. Emphasize ingredient transparency with editorial photography and trust-building content blocks."},
+      {variant:"C",label:"Experimental (Interactive)",oneLiner:"인터랙션 중심(슬라이더/카드/마이크로 애니메이션)",layout:["Hero","Interactive diagnostic","Dynamic ingredient map","Outcome preview","CTA"],copySamples:["나의 피부 타입을 10초 만에","결과에 맞춘 루틴 추천"],prompt:"Design an experimental interactive skincare experience. Include a skin type diagnostic flow, animated ingredient visualization, and personalized outcome preview."}
+    ]
+  },
+  saas: {
+    brief:{projectName:"FlowOps Platform",industry:"B2B SaaS / Productivity",goal:"Demo signup & PLG conversion",targetAudience:"Operations managers, SMB-ENT",channel:"Web",constraints:"Professional, data-forward, avoid consumer feel",competitorUrls:[]},
+    packet:{keywords:["workflow","automation","ops","dashboard","enterprise","metrics"],toneGuide:["Confident and direct.","Lead with outcomes, not features.","Use numbers to anchor credibility."],topPatterns:[{title:"Metric-first hero",desc:"Hero에 핵심 지표(% 절감, 시간 단축) 강조"},{title:"Product screenshot proof",desc:"실제 UI 스크린샷으로 신뢰 구축"},{title:"Use-case toggle",desc:"직군/규모별 Use case 전환 UI"}],promptResultSummary:"Data-driven ops 플랫폼. Hero에 ROI 지표 전면 배치, 데모 CTA 이중화. Enterprise 신호(SOC2, SSO 뱃지) 필수."},
+    competitors:[
+      {
+        name:"Notion", url:"notion.so",
+        scores:{fit:6.5,clarity:9.2,conversion:8.1,innovation:8.7},
+        strengths:["브랜드 인지도","온보딩 플로우","커뮤니티 증명"],
+        weaknesses:["B2B 포지셔닝 약함","엔터프라이즈 신뢰 부족"],
+        takeaways:["개인→팀 확장 스토리라인 참고","블록 기반 UI 소개 방식"],
+        pages:[
+          {section:"Hero",type:"hero",tags:["Minimal","Headline-led","Free CTA"],annotation:"군더더기 없는 1줄 헤드라인. '자유롭게 쓰기' 콘셉트를 시각적으로 표현. CTA는 '무료 시작' 단일.",insight:"헤드라인 → 동사+결과 구조가 설득력 높음"},
+          {section:"Product Tour",type:"interactive",tags:["Animated","Tabs","Use cases"],annotation:"Tabs로 개인/팀/기업 케이스 분리. 각 탭마다 관련 UI 애니메이션 재생. 체류 시간 증가.",insight:"탭 → 직군별 분기가 효과적"},
+          {section:"Social Proof",type:"social",tags:["Logo wall","Case studies","Numbers"],annotation:"글로벌 기업 로고 월 + 케이스 스터디 링크. '4M+ 팀' 숫자 강조.",insight:"로고 마퀴 → 자동 스크롤로 공간 절약"},
+          {section:"Pricing",type:"cta",tags:["Free tier","Compare","Annual toggle"],annotation:"무료 티어 강조 + 연간/월간 토글. 플랜 비교표 간결하게. 엔터프라이즈는 문의 유도.",insight:"연간 전환 토글 → 할인율 % 표시 필수"}
+        ]
+      },
+      {
+        name:"Monday.com", url:"monday.com",
+        scores:{fit:8.9,clarity:8.4,conversion:9.1,innovation:7.3},
+        strengths:["강한 CTA 구조","ROI 계산기","소셜 증명"],
+        weaknesses:["정보 과밀","브랜드 일관성 약함"],
+        takeaways:["ROI calculator 위젯 도입","사용 사례별 랜딩 분기"],
+        pages:[
+          {section:"Hero",type:"hero",tags:["Bold CTA","Product preview","No fluff"],annotation:"Hero에 제품 대시보드 미리보기 직접 삽입. '무료 시작' CTA 더블 배치. 스크롤 없이 가치 전달.",insight:"제품 UI 노출 → Hero에서 바로 보여줘야"},
+          {section:"ROI Calculator",type:"interactive",tags:["Calculator","Real-time","Personalized"],annotation:"팀 규모 입력 시 실시간 ROI 계산. '연간 절약액 $X' 출력. 개인화된 수치가 전환율 30% 향상.",insight:"숫자 개인화 → 설득력 2-3배 증가"},
+          {section:"Use Case Tabs",type:"grid",tags:["Industry tabs","Screenshots","CTA per tab"],annotation:"마케팅/개발/HR 등 직군별 탭. 탭마다 해당 팀용 CTA. 세그먼트 최적화.",insight:"직군 탭 → 상단 고정 sticky로"},
+          {section:"CTA Bar",type:"cta",tags:["Sticky","Double CTA","Urgency"],annotation:"스크롤 시 항상 노출되는 sticky 바. '무료 시작 + 데모 신청' 이중 CTA. 전환 기회 극대화.",insight:"이중 CTA → primary/secondary 색상 대비 필수"}
+        ]
+      }
+    ],
+    concepts:[
+      {variant:"A",label:"Basic (ROI-focused)",oneLiner:"지표 중심 Hero + 빠른 데모 CTA",layout:["Metric Hero","Logo bar","Product preview","ROI section","Pricing","CTA"],copySamples:["팀 생산성 40% 향상","설정 없이 바로 시작"],prompt:"Design a B2B SaaS landing page. Lead with ROI metrics in the hero, include product screenshots, and make the demo CTA prominent."},
+      {variant:"B",label:"Polished (Enterprise)",oneLiner:"엔터프라이즈 신뢰 + 세그먼트별 USP",layout:["Hero","Trust logos","Feature tabs","Security badges","Case studies","Demo CTA"],copySamples:["Enterprise-grade security","팀 규모에 맞게 확장"],prompt:"Design an enterprise-focused SaaS landing page with trust signals, security badges, and case study sections."},
+      {variant:"C",label:"Experimental (Interactive)",oneLiner:"인터랙티브 제품 데모 + 실시간 ROI 계산",layout:["Animated Hero","Live product demo","ROI calculator","Workflow builder preview","CTA"],copySamples:["지금 바로 워크플로우 체험","당신의 ROI를 계산해보세요"],prompt:"Design an interactive SaaS landing page with an embedded product demo and real-time ROI calculator."}
+    ]
+  },
+  fashion: {
+    brief:{projectName:"ARKE SS25 Collection",industry:"Fashion / Luxury Ready-to-Wear",goal:"Brand storytelling & editorial conversion",targetAudience:"Style-conscious millennials, urban affluent",channel:"Web + Instagram",constraints:"Minimal text, image-led, no discount framing",competitorUrls:[]},
+    packet:{keywords:["editorial","minimal","texture","craft","ss25","form"],toneGuide:["Let imagery lead — copy is sparse.","Use art direction language.","No price-first framing; story first."],topPatterns:[{title:"Full-bleed editorial hero",desc:"풀스크린 캠페인 비주얼 + 컬렉션 이름"},{title:"Lookbook scroll",desc:"스크롤에 반응하는 룩북 시퀀스"},{title:"Material close-up cards",desc:"소재/텍스처 디테일 확대 카드"}],promptResultSummary:"이미지 중심 에디토리얼 랜딩. 컬렉션 스토리를 먼저 전달하고, 쇼핑은 자연스러운 흐름으로."},
+    competitors:[
+      {
+        name:"A.P.C.", url:"apc.fr",
+        scores:{fit:8.1,clarity:8.6,conversion:7.0,innovation:7.8},
+        strengths:["에디토리얼 일관성","미니멀 타이포","브랜드 무드"],
+        weaknesses:["상품 탐색 UX 약함","모바일 경험 부족"],
+        takeaways:["이미지+텍스트 비율 참고","컬렉션 내러티브 구조"],
+        pages:[
+          {section:"Hero",type:"hero",tags:["Full-bleed","Collection title","Minimal text"],annotation:"캠페인 이미지 풀블리드. 컬렉션명만 오버레이. 어떤 제품인지보다 '무드'를 먼저 전달.",insight:"텍스트 최소화 → 이미지가 말하게"},
+          {section:"Lookbook",type:"grid",tags:["Editorial grid","Hover zoom","Clean layout"],annotation:"2-3열 그리드 룩북. Hover 시 확대. 클릭 → 제품 상세. 브랜드 세계관 유지.",insight:"룩북 그리드 → 비율 2:3 세로형"},
+          {section:"Navigation",type:"nav",tags:["Clean","Category-led","No hamburger"],annotation:"카테고리 중심 수평 nav. 모바일에서도 풀 메뉴 노출. 로고는 센터.",insight:"Nav → 카테고리 6개 이하로 정리"},
+          {section:"Material Detail",type:"comparison",tags:["Close-up","Texture","Craft story"],annotation:"소재 클로즈업 + 원산지/장인 스토리. '이 재킷의 울은 스코틀랜드산' 형식. 가치 정당화.",insight:"소재 카드 → 클로즈업 + 2줄 설명"}
+        ]
+      },
+      {
+        name:"Acne Studios", url:"acnestudios.com",
+        scores:{fit:8.7,clarity:7.9,conversion:7.5,innovation:9.1},
+        strengths:["인터랙션 실험적","캠페인 비주얼","글로벌 일관성"],
+        weaknesses:["로딩 성능","구매 경로 복잡"],
+        takeaways:["비선형 탐색 UI 참고","색상 필터 UX"],
+        pages:[
+          {section:"Hero",type:"hero",tags:["Experimental","Cursor effect","Artistic"],annotation:"커서 따라 이미지가 움직이는 인터랙션. 예술적 인상. 브랜드 페르소나 명확.",insight:"커서 인터랙션 → CSS transform 기반"},
+          {section:"Collection Nav",type:"interactive",tags:["Horizontal scroll","Season tabs","Visual"],annotation:"시즌별 수평 스크롤 내비게이션. 탭 전환 시 배경색 변경. 컬렉션 간 이동이 부드러움.",insight:"수평 스크롤 → 스냅 포인트 필수"},
+          {section:"Product Grid",type:"grid",tags:["Color filter","Hover","Quick add"],annotation:"컬러 스와치 필터. Hover 시 두 번째 컷 전환. Quick add 버튼 등장.",insight:"색상 필터 → 인라인 스와치가 UX 우세"},
+          {section:"Campaign Film",type:"social",tags:["Auto-play","Muted","Branded"],annotation:"자동재생 무음 캠페인 필름. 스크롤하면 재생률 변화. 브랜드 세계관 강화.",insight:"비디오 → WebM + poster 이미지 필수"}
+        ]
+      }
+    ],
+    concepts:[
+      {variant:"A",label:"Basic (Clean Editorial)",oneLiner:"풀블리드 비주얼 + 미니멀 텍스트",layout:["Full-bleed Hero","Collection name","Lookbook grid","Material detail","Shop CTA"],copySamples:["SS25 — Form follows quiet.","Crafted for the in-between season."],prompt:"Design a minimal fashion editorial landing page. Full-bleed hero, sparse typography, image-led grid layout."},
+      {variant:"B",label:"Polished (Brand Narrative)",oneLiner:"컬렉션 스토리텔링 + 에디토리얼 흐름",layout:["Cinematic Hero","Designer note","Lookbook sequence","Behind-the-scenes","Collection CTA"],copySamples:["Every piece begins with a question.","Made once, made well."],prompt:"Design a fashion landing page focused on brand narrative. Include a designer note section and behind-the-scenes imagery."},
+      {variant:"C",label:"Experimental (Immersive)",oneLiner:"스크롤 기반 인터랙티브 룩북",layout:["Video hero","Scroll-driven lookbook","Interactive material explorer","Size guide","Checkout entry"],copySamples:["Scroll to discover the collection.","Touch the fabric — virtually."],prompt:"Design an immersive fashion experience with scroll-driven animations, interactive material textures, and a cinematic video hero."}
+    ]
+  },
+  fnb: {
+    brief:{projectName:"Mori Matcha Bar",industry:"F&B / Specialty Café",goal:"Brand awareness & location visit",targetAudience:"Urban millennials, wellness-oriented",channel:"Web + Google Maps",constraints:"Earthy, calm, avoid corporate feel",competitorUrls:[]},
+    packet:{keywords:["matcha","craft","earthy","ritual","slow","green"],toneGuide:["Slow and contemplative tone.","Sensory language — describe the experience.","Local and artisanal signals."],topPatterns:[{title:"Sensory hero",desc:"음료 클로즈업 + 분위기 조명 Hero"},{title:"Origin story section",desc:"재료 원산지 + 제조 철학 섹션"},{title:"Visit CTA with map",desc:"방문 유도 + 지도 임베드"}],promptResultSummary:"감각적인 분위기 중심 브랜딩. 제품보다 경험을 팔고, 방문 CTA를 자연스럽게."},
+    competitors:[
+      {
+        name:"Cha Cha Matcha", url:"chachamatcha.com",
+        scores:{fit:8.0,clarity:8.3,conversion:7.8,innovation:7.5},
+        strengths:["브랜드 컬러 강함","소셜 증명","인스타그래머블 비주얼"],
+        weaknesses:["스토리 깊이 얕음","위치 탐색 불편"],
+        takeaways:["컬러 팔레트 일관성 참고","소셜 피드 임베드"],
+        pages:[
+          {section:"Hero",type:"hero",tags:["Bold color","Product shot","Playful"],annotation:"브랜드 시그니처 핑크+그린 풀블리드. 제품 샷 직접 노출. 가볍고 에너지 넘치는 무드.",insight:"브랜드 컬러 → Hero에서 100% 써라"},
+          {section:"Menu Preview",type:"grid",tags:["Card grid","Seasonal","Visual-first"],annotation:"음료 카드 그리드. 계절 한정 상품 배지 강조. 가격은 카드 내 작게.",insight:"메뉴 카드 → 이미지 70% + 텍스트 30%"},
+          {section:"Instagram Feed",type:"social",tags:["Live feed","UGC","Community"],annotation:"라이브 인스타그램 피드 임베드. UGC 중심. 소셜 증명 + 커뮤니티감 동시 구축.",insight:"UGC 피드 → 브랜드 해시태그 필터"},
+          {section:"Location CTA",type:"cta",tags:["Map embed","Hours","Directions"],annotation:"Google Maps 임베드 + 영업시간 + 교통편 정보. '찾아오는 길' CTA로 방문 전환.",insight:"지도 → 정적 이미지 + 링크가 성능 우세"}
+        ]
+      },
+      {
+        name:"Ippodo Tea", url:"ippodo-tea.co.jp",
+        scores:{fit:7.5,clarity:9.1,conversion:7.2,innovation:8.2},
+        strengths:["원산지 스토리텔링","제품 교육 콘텐츠","신뢰 구축"],
+        weaknesses:["전환 경로 김","디자인 올드"],
+        takeaways:["Ritual 스토리 섹션","Tea education 콘텐츠"],
+        pages:[
+          {section:"Hero",type:"hero",tags:["Heritage","Calm","Text-led"],annotation:"헤리티지 감성 + 차분한 크림 톤. 텍스트 중심 헤드라인 '1717년부터 이어온 말차'. 권위와 신뢰.",insight:"헤리티지 연도 → 숫자가 신뢰 앵커"},
+          {section:"Origin Story",type:"comparison",tags:["Timeline","Photography","Craft"],annotation:"교토 원산지 스토리 타임라인. 장인 사진 + 재배 철학. 브랜드 히스토리 깊이.",insight:"타임라인 → 수직 스크롤 스토리텔링"},
+          {section:"Education",type:"grid",tags:["How-to","Articles","Ritual guide"],annotation:"말차 내리는 법, 온도, 도구 교육 콘텐츠. 제품 판매보다 문화 전달 우선.",insight:"교육 콘텐츠 → 구매 후 충성도 강화"},
+          {section:"Shop CTA",type:"cta",tags:["Collection","Gift","Minimal"],annotation:"'선물하기' 프레임 CTA. 프리미엄 포장 이미지. 선물 수요를 명시적으로 공략.",insight:"선물 프레임 → 가격 저항 감소 효과"}
+        ]
+      }
+    ],
+    concepts:[
+      {variant:"A",label:"Basic (Atmosphere-first)",oneLiner:"분위기 비주얼 + 방문 유도",layout:["Sensory Hero","Menu preview","About section","Location + Hours","Instagram feed"],copySamples:["매일의 의식을 위한 공간","천천히, 제대로."],prompt:"Design an earthy café landing page. Sensory photography, warm tones, and a visit CTA with embedded map."},
+      {variant:"B",label:"Polished (Origin Story)",oneLiner:"원산지 스토리 + 장인 정신",layout:["Cinematic Hero","Origin story","Craft process","Seasonal menu","Visit CTA"],copySamples:["교토에서 시작된 한 잔","손으로 만든 말차의 차이"],prompt:"Design a specialty café site with deep origin storytelling, craft process photography, and seasonal menu highlights."},
+      {variant:"C",label:"Experimental (Ritual Experience)",oneLiner:"말차 의식 인터랙티브 저니",layout:["Immersive video hero","Interactive origin map","Brew guide","Scent/taste profile visualizer","Reservation"],copySamples:["당신의 의식을 설계하세요","한 잔의 지도를 그리다"],prompt:"Design an immersive matcha ritual experience with interactive origin mapping and a sensory flavor profile visualizer."}
+    ]
+  }
+};
+
+let currentData = null;
+let currentTab = 'packet';
+let activeVariant = 'A';
+
+// 언어 감지 (한국이면 ko)
+const UI_LANG = (navigator.language || '').startsWith('ko') ? 'ko' : 'en';
+
+const CONCEPT_META = {
+  A: {
+    label: 'Essential',
+    tip: { en: 'A data-driven approach focused on market-proven aesthetics.',
+           ko: '시장에서 검증된 미학을 기반으로 한 데이터 중심 접근 방식.' },
+  },
+  B: {
+    label: 'Distinctive',
+    tip: { en: 'A strategic shift to reinforce brand identity through unique visual cues.',
+           ko: '독자적인 시각 언어로 브랜드 아이덴티티를 강화하는 차별화 전략.' },
+  },
+  C: {
+    label: 'Experimental',
+    tip: { en: 'A forward-looking exploration of emerging patterns and AI-driven signals.',
+           ko: '부상하는 패턴과 AI 신호를 탐색하는 미래 지향적 실험.' },
+  },
+};
+let activeFilter = 'fit';
+
+// ── PRESETS ────────────────────────────────────────────
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadPreset(btn.dataset.preset);
+  });
+});
+
+function loadPreset(key) {
+  const d = PRESETS[key];
+  if(!d) return;
+  const b = d.brief;
+  document.getElementById('f-name').value = b.projectName;
+  document.getElementById('f-industry').value = b.industry;
+  document.getElementById('f-goal').value = b.goal;
+  document.getElementById('f-target').value = b.targetAudience;
+  document.getElementById('f-channel').value = b.channel;
+  document.getElementById('f-constraints').value = b.constraints;
+  document.getElementById('f-competitor').value = (b.competitorUrls || []).join(', ');
+}
+
+// ── LOAD BRIEF FROM localStorage (otb_entry.html) ────────
+function loadBriefFromStorage() {
+  try {
+    const stored = localStorage.getItem('otb_brief');
+    if (!stored) return false;
+    const b = JSON.parse(stored);
+    const toStr = (v) => Array.isArray(v) ? v.join(', ') : (v || '');
+    if (b.projectName) document.getElementById('f-name').value = b.projectName;
+    if (b.industry)    document.getElementById('f-industry').value = toStr(b.industry);
+    if (b.goal)        document.getElementById('f-goal').value = toStr(b.goal);
+    if (b.target)      document.getElementById('f-target').value = toStr(b.target);
+    if (b.channel)     document.getElementById('f-channel').value = toStr(b.channel);
+    const req = b.req || b.constraints;
+    if (req) document.getElementById('f-constraints').value = toStr(req);
+    const comp = b.comp || b.competitors;
+    if (comp) document.getElementById('f-competitor').value = toStr(comp);
+    return true;
+  } catch(e) { return false; }
+}
+
+const _hadStoredBrief = loadBriefFromStorage();
+if (!_hadStoredBrief) loadPreset('beauty');
+
+// ── API CONFIG ────────────────────────────────────────────
+const API_BASE = 'http://localhost:3000';
+
+// ── GENERATE ────────────────────────────────────────────
+const STEPS = [
+  {label:'Parsing brief', status:'Running'},
+  {label:'Retrieving references', status:'Running'},
+  {label:'Generating strategies', status:'Running'},
+  {label:'Building prompts', status:'Done'}
+];
+
+async function generate() {
+  const name = document.getElementById('f-name').value.trim();
+  if(!name) { showToast('프로젝트명을 입력해주세요'); return; }
+
+  showView('loader');
+  document.getElementById('generateBtn').disabled = true;
+
+  const brief = {
+    projectName: name,
+    industry: document.getElementById('f-industry').value.trim(),
+    goal:     document.getElementById('f-goal').value.trim(),
+    target:   document.getElementById('f-target').value.trim(),
+    channel:  document.getElementById('f-channel').value.trim(),
+    req:      document.getElementById('f-constraints').value.trim(),
+    comp:     document.getElementById('f-competitor').value.trim()
+              .split(',').map(s=>s.trim()).filter(Boolean),
+    locale:   navigator.language || 'en',
+  };
+
+  // Run loader animation and API call in parallel
+  let apiResult = null, apiError = null, animDone = false, apiDone = false;
+
+  function tryFinish() {
+    if (!animDone || !apiDone) return;
+    if (apiError) {
+      showView('error');
+      document.getElementById('generateBtn').disabled = false;
+    } else {
+      currentData = mapPacket(apiResult.packet, brief);
+      showView('results');
+      document.getElementById('generateBtn').disabled = false;
+      document.getElementById('compBadge').textContent = currentData.competitors.length;
+      renderTab('packet');
+    }
+  }
+
+  runStepLoader(() => { animDone = true; tryFinish(); });
+
+  try {
+    const res = await fetch(API_BASE + '/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brief }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    apiResult = await res.json();
+  } catch(e) {
+    apiError = e;
+    console.error('[GENERATE] API error:', e);
+  }
+  apiDone = true;
+  tryFinish();
+}
+
+// ── MAP API RESPONSE → currentData ────────────────────────
+function mapPacket(packet, formData) {
+  const strategies  = packet.strategies   || {};
+  const promptPack  = packet.prompt_pack  || {};
+  const refs        = packet.recommended_references || [];
+  const briefData   = packet.brief        || {};
+
+  // Concepts A/B/C
+  const concepts = ['A','B','C'].map(v => {
+    const s = strategies[v] || {};
+    const p = promptPack[v] || {};
+    const layoutItems = s.ux_reasoning
+      ? s.ux_reasoning.split(/[.。\n]/).map(l=>l.trim()).filter(l=>l.length>5).slice(0,5)
+      : [];
+    const kw = p.keyword_pack || [];
+    return {
+      variant: v,
+      label: s.title || ('Variant ' + v),
+      oneLiner: s.design_direction || '',
+      layout: layoutItems.length ? layoutItems : [s.design_direction || 'Design direction'],
+      copySamples: kw.length >= 2 ? kw.slice(0,2) : (s.design_direction ? [s.design_direction] : ['Design variant ' + v]),
+      prompt: p.visual_prompt || s.design_direction || '',
+    };
+  });
+
+  // 실제 크롤링된 경쟁사 분석 데이터만 사용 (입력한 URL이 없으면 빈 배열)
+  const competitors = packet.competitors || [];
+
+  // Packet tab 데이터
+  const keywords = briefData.keywords || [];
+  const toneGuide = ['A','B','C']
+    .map(v => strategies[v]?.ux_reasoning)
+    .filter(Boolean)
+    .map(s => s.split(/[.。]/)[0].trim())
+    .filter(Boolean);
+  const topPatterns = refs.slice(0,3).map(r => ({
+    title: r.title || 'Reference',
+    desc:  r.relevance_explanation || r.source_url || '',
+  }));
+
+  return {
+    brief: {
+      projectName:   formData.projectName,
+      industry:      formData.industry,
+      goal:          formData.goal,
+      targetAudience: formData.target,
+      channel:       formData.channel,
+      constraints:   formData.req,
+      competitorUrls: Array.isArray(formData.comp) ? formData.comp : [],
+    },
+    packet: {
+      promptResultSummary: strategies.A?.design_direction || briefData.intent || '리서치 패킷이 생성되었습니다.',
+      keywords:    keywords.length    ? keywords    : [formData.industry, formData.goal].filter(Boolean),
+      toneGuide:   toneGuide.length   ? toneGuide   : ['전략적 접근이 필요합니다.'],
+      topPatterns: topPatterns.length ? topPatterns : [{title:'Analysis Complete', desc:'리서치 데이터가 수집되었습니다.'}],
+    },
+    competitors,
+    concepts,
+    _raw: packet,
+  };
+}
+
+function runStepLoader(done) {
+  const container = document.getElementById('slSteps');
+  const bar = document.getElementById('slBarFill');
+  container.innerHTML = '';
+
+  STEPS.forEach((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'sl-step';
+    el.id = 'step-' + i;
+    el.innerHTML = `<div class="ss-dot"></div><div class="ss-label">${s.label}</div><div class="ss-status">Waiting</div>`;
+    container.appendChild(el);
+  });
+
+  let i = 0;
+  const delay = 900;
+
+  function next() {
+    if(i > 0) {
+      const prev = document.getElementById('step-' + (i-1));
+      prev.classList.remove('active');
+      prev.classList.add('done');
+      prev.querySelector('.ss-status').textContent = '✓';
+    }
+    if(i >= STEPS.length) { bar.style.width = '100%'; setTimeout(done, 300); return; }
+    const el = document.getElementById('step-' + i);
+    el.classList.add('active');
+    el.querySelector('.ss-status').textContent = STEPS[i].status;
+    bar.style.width = ((i+1) / STEPS.length * 100) + '%';
+    i++;
+    setTimeout(next, delay);
+  }
+  next();
+}
+
+// ── VIEWS ────────────────────────────────────────────
+function showView(v) {
+  document.getElementById('emptyState').style.display = v === 'empty' ? 'flex' : 'none';
+  const loader = document.getElementById('stepLoader');
+  loader.style.display = v === 'loader' ? 'flex' : 'none';
+  loader.classList.toggle('show', v === 'loader');
+  const err = document.getElementById('errorState');
+  err.style.display = v === 'error' ? 'flex' : 'none';
+  err.classList.toggle('show', v === 'error');
+  const res = document.getElementById('results');
+  res.style.display = v === 'results' ? 'flex' : 'none';
+  res.classList.toggle('show', v === 'results');
+}
+
+function reset() {
+  showView('empty');
+  currentData = null;
+  document.getElementById('generateBtn').disabled = false;
+}
+
+// ── TABS ────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentTab = tab.dataset.tab;
+    renderTab(currentTab);
+  });
+});
+
+function renderTab(tab) {
+  if(!currentData) return;
+  const c = document.getElementById('tabContent');
+  c.scrollTop = 0;
+  if(tab === 'packet') renderPacket(c);
+  else if(tab === 'competitors') renderCompetitors(c);
+  else if(tab === 'concepts') renderConcepts(c);
+  else if(tab === 'prompts') renderPrompts(c);
+}
+
+// ── PACKET ────────────────────────────────────────────
+function renderPacket(c) {
+  const p = currentData.packet;
+  c.innerHTML = `
+    <div class="packet-grid">
+      <div class="packet-card full fade-up">
+        <div class="pc-label">Summary</div>
+        <div class="pc-summary">${p.promptResultSummary}</div>
+      </div>
+      <div class="packet-card fade-up">
+        <div class="pc-label">Keywords</div>
+        <div class="keyword-list">${p.keywords.map(k=>`<span class="keyword">${k}</span>`).join('')}</div>
+      </div>
+      <div class="packet-card fade-up">
+        <div class="pc-label">Tone Guide</div>
+        <div class="tone-list">${p.toneGuide.map(t=>`<div class="tone-item"><div class="tone-dot"></div>${t}</div>`).join('')}</div>
+      </div>
+      <div class="packet-card full fade-up">
+        <div class="pc-label">Top UX Patterns</div>
+        <div class="pattern-list">${p.topPatterns.map((pt,i)=>`<div class="pattern-item" onclick="openPatternDrawer(${i})"><div class="pi-title">${pt.title}</div><div class="pi-desc">${pt.desc}</div></div>`).join('')}</div>
+      </div>
+    </div>`;
+}
+
+// ── COMPETITORS ────────────────────────────────────────
+let activeCompIdx = 0;
+let activeSection = 'all';
+
+const SECTION_MOCKUPS = {
+  hero: (idx) => `
+    <rect width="400" height="124" fill="#0c0c0c"/>
+    <rect x="0" y="0" width="400" height="22" fill="rgba(255,255,255,.03)"/>
+    <circle cx="14" cy="11" r="3" fill="#ff5f57"/><circle cx="24" cy="11" r="3" fill="#febc2e"/><circle cx="34" cy="11" r="3" fill="#28c840"/>
+    <rect x="50" y="7" width="120" height="8" rx="2" fill="rgba(255,255,255,.06)"/>
+    <rect x="340" y="6" width="50" height="10" rx="2" fill="rgba(255,92,26,.25)"/>
+    <rect x="80" y="38" width="240" height="18" rx="2" fill="rgba(255,255,255,.1)"/>
+    <rect x="110" y="60" width="180" height="11" rx="2" fill="rgba(255,255,255,.05)"/>
+    <rect x="140" y="78" width="120" height="22" rx="3" fill="rgba(255,92,26,.3)"/>
+  `,
+  nav: (idx) => `
+    <rect width="400" height="124" fill="#0a0a0a"/>
+    <rect x="0" y="0" width="400" height="36" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.06)" stroke-width="0.5"/>
+    <rect x="16" y="12" width="48" height="12" rx="2" fill="rgba(255,92,26,.35)"/>
+    <rect x="120" y="13" width="32" height="10" rx="2" fill="rgba(255,255,255,.08)"/>
+    <rect x="162" y="13" width="32" height="10" rx="2" fill="rgba(255,255,255,.08)"/>
+    <rect x="204" y="13" width="32" height="10" rx="2" fill="rgba(255,255,255,.08)"/>
+    <rect x="246" y="13" width="32" height="10" rx="2" fill="rgba(255,255,255,.08)"/>
+    <rect x="330" y="10" width="56" height="16" rx="3" fill="rgba(255,92,26,.28)"/>
+    <rect x="16" y="52" width="368" height="52" rx="3" fill="rgba(255,255,255,.03)"/>
+  `,
+  grid: (idx) => `
+    <rect width="400" height="124" fill="#0c0c0c"/>
+    <rect x="12" y="12" width="116" height="80" rx="4" fill="rgba(255,255,255,.05)"/>
+    <rect x="12" y="96" width="70" height="7" rx="2" fill="rgba(255,255,255,.08)"/>
+    <rect x="142" y="12" width="116" height="80" rx="4" fill="rgba(255,255,255,.06)"/>
+    <rect x="142" y="96" width="70" height="7" rx="2" fill="rgba(255,255,255,.08)"/>
+    <rect x="272" y="12" width="116" height="80" rx="4" fill="rgba(255,92,26,.1)"/>
+    <rect x="272" y="96" width="70" height="7" rx="2" fill="rgba(255,255,255,.08)"/>
+  `,
+  strip: (idx) => `
+    <rect width="400" height="124" fill="#0a0a0a"/>
+    <rect x="0" y="42" width="400" height="42" fill="rgba(255,255,255,.03)"/>
+    <rect x="30" y="54" width="60" height="16" rx="2" fill="rgba(255,92,26,.2)"/>
+    <rect x="30" y="74" width="46" height="6" rx="1" fill="rgba(255,255,255,.07)"/>
+    <rect x="170" y="54" width="60" height="16" rx="2" fill="rgba(255,92,26,.2)"/>
+    <rect x="170" y="74" width="46" height="6" rx="1" fill="rgba(255,255,255,.07)"/>
+    <rect x="310" y="54" width="60" height="16" rx="2" fill="rgba(255,92,26,.2)"/>
+    <rect x="310" y="74" width="46" height="6" rx="1" fill="rgba(255,255,255,.07)"/>
+  `,
+  comparison: (idx) => `
+    <rect width="400" height="124" fill="#0c0c0c"/>
+    <rect x="12" y="20" width="185" height="88" rx="3" fill="rgba(255,255,255,.05)"/>
+    <rect x="12" y="20" width="185" height="88" rx="3" fill="url(#grad${idx})"/>
+    <rect x="203" y="20" width="185" height="88" rx="3" fill="rgba(255,92,26,.08)"/>
+    <line x1="200" y1="20" x2="200" y2="108" stroke="rgba(255,255,255,.15)" stroke-width="2"/>
+    <rect x="180" y="55" width="40" height="16" rx="8" fill="rgba(255,255,255,.12)"/>
+    <rect x="14" y="96" width="60" height="7" rx="2" fill="rgba(255,255,255,.08)"/>
+    <rect x="205" y="96" width="60" height="7" rx="2" fill="rgba(255,92,26,.2)"/>
+  `,
+  interactive: (idx) => `
+    <rect width="400" height="124" fill="#0a0a0a"/>
+    <ellipse cx="200" cy="62" rx="80" ry="55" fill="rgba(255,92,26,.06)" stroke="rgba(255,92,26,.15)" stroke-width="1"/>
+    <circle cx="140" cy="45" r="8" fill="rgba(255,92,26,.2)"/><circle cx="200" cy="30" r="6" fill="rgba(255,255,255,.1)"/>
+    <circle cx="260" cy="50" r="10" fill="rgba(255,92,26,.15)"/><circle cx="230" cy="80" r="7" fill="rgba(255,255,255,.08)"/>
+    <circle cx="160" cy="85" r="9" fill="rgba(255,92,26,.1)"/>
+    <line x1="140" y1="45" x2="200" y2="30" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+    <line x1="200" y1="30" x2="260" y2="50" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+    <line x1="260" y1="50" x2="230" y2="80" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+    <rect x="12" y="106" width="180" height="8" rx="2" fill="rgba(255,255,255,.05)"/>
+    <rect x="200" y="106" width="100" height="8" rx="2" fill="rgba(255,92,26,.15)"/>
+  `,
+  social: (idx) => `
+    <rect width="400" height="124" fill="#0c0c0c"/>
+    <rect x="12" y="12" width="84" height="84" rx="4" fill="rgba(255,255,255,.06)"/>
+    <rect x="16" y="70" width="76" height="22" rx="2" fill="rgba(0,0,0,.4)"/>
+    <rect x="18" y="73" width="50" height="6" rx="1" fill="rgba(255,255,255,.2)"/>
+    <rect x="18" y="82" width="34" height="5" rx="1" fill="rgba(255,255,255,.1)"/>
+    <rect x="104" y="12" width="84" height="84" rx="4" fill="rgba(255,92,26,.08)"/>
+    <rect x="108" y="70" width="76" height="22" rx="2" fill="rgba(0,0,0,.4)"/>
+    <rect x="110" y="73" width="50" height="6" rx="1" fill="rgba(255,255,255,.2)"/>
+    <rect x="196" y="12" width="84" height="84" rx="4" fill="rgba(255,255,255,.05)"/>
+    <rect x="288" y="12" width="100" height="40" rx="4" fill="rgba(255,255,255,.04)"/>
+    <rect x="288" y="58" width="100" height="38" rx="4" fill="rgba(255,92,26,.07)"/>
+  `,
+  cta: (idx) => `
+    <rect width="400" height="124" fill="#0a0a0a"/>
+    <rect x="0" y="90" width="400" height="34" fill="rgba(255,92,26,.1)" stroke="rgba(255,92,26,.2)" stroke-width="0.5"/>
+    <rect x="40" y="30" width="320" height="20" rx="2" fill="rgba(255,255,255,.06)"/>
+    <rect x="80" y="56" width="240" height="14" rx="2" fill="rgba(255,255,255,.04)"/>
+    <rect x="120" y="76" width="160" height="10" rx="2" fill="rgba(255,255,255,.03)"/>
+    <rect x="100" y="97" width="120" height="20" rx="3" fill="rgba(255,92,26,.4)"/>
+    <rect x="232" y="97" width="90" height="20" rx="3" fill="rgba(255,255,255,.08)"/>
+  `,
+  mobile: (idx) => `
+    <rect width="400" height="124" fill="#0c0c0c"/>
+    <rect x="140" y="8" width="120" height="108" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+    <rect x="148" y="22" width="104" height="70" rx="4" fill="rgba(255,255,255,.04)"/>
+    <rect x="160" y="100" width="80" height="10" rx="5" fill="rgba(255,92,26,.35)"/>
+    <rect x="20" y="30" width="100" height="8" rx="2" fill="rgba(255,255,255,.06)"/>
+    <rect x="20" y="44" width="80" height="6" rx="2" fill="rgba(255,255,255,.04)"/>
+  `
+};
+
+function renderCompetitors(c) {
+  // 경쟁사 없으면 empty state
+  if (!currentData.competitors || currentData.competitors.length === 0) {
+    c.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:calc(100vh - 96px);gap:16px;color:rgba(255,255,255,.3)">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.4)">경쟁사 분석 없음</div>
+        <div style="font-size:11px;text-align:center;line-height:1.6;max-width:280px">브리프의 <strong style="color:rgba(255,255,255,.5)">경쟁사 링크</strong> 필드에<br>URL을 입력하면 자동으로 크롤링 및 분석됩니다.</div>
+      </div>`;
+    return;
+  }
+
+  const comp = currentData.competitors[activeCompIdx];
+  const allSections = [...new Set((comp.pages||[]).map(p=>p.type))];
+  const filtered = activeSection === 'all'
+    ? (comp.pages||[])
+    : (comp.pages||[]).filter(p=>p.type===activeSection);
+  const scoreLabels = {fit:'Fit',clarity:'Clarity',conversion:'Conv',innovation:'Innov'};
+  const deepCount = currentData.competitors.filter(cp=>!cp.shallow).length;
+
+  // 사이드바 아이템: deep은 스코어 바, shallow는 "링크만" 배지
+  const sidebarItems = currentData.competitors.map((cp,i) => `
+    <div class="msb-item ${i===activeCompIdx?'active':''}" onclick="selectComp(${i})">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <div class="msbi-name">${cp.name}</div>
+        ${cp.shallow ? `<span style="font-size:8px;font-weight:700;letter-spacing:.08em;color:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.1);padding:2px 6px;border-radius:10px">LINK</span>` : ''}
+      </div>
+      <div class="msbi-url">${cp.url}</div>
+      ${!cp.shallow ? `<div class="msbi-bar">
+        ${Object.entries(cp.scores||{}).map(([k,v])=>`
+          <div class="msbi-score">
+            <div class="msbi-sv">${v}</div>
+            <div class="msbi-track"><div class="msbi-fill" style="width:${v*10}%"></div></div>
+          </div>`).join('')}
+      </div>` : ''}
+    </div>`).join('');
+
+  // main 영역: shallow이면 링크 전달 뷰, deep이면 풀 분석 뷰
+  const mainArea = comp.shallow ? `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="1.3" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,.45)">${comp.name}</div>
+      <a href="${comp.fullUrl||comp.url}" target="_blank" style="font-size:11px;color:var(--a);text-decoration:none;border:1px solid rgba(255,92,26,.3);padding:6px 16px;border-radius:3px">${comp.fullUrl || comp.url} ↗</a>
+      <div style="font-size:10px;color:rgba(255,255,255,.2)">딥 분석 미포함 — 링크만 전달됨</div>
+    </div>` : `
+    <div class="mm-topbar">
+      <div class="mm-site-info">
+        <div class="mm-name">${comp.name}</div>
+        <div class="mm-url">${comp.url}</div>
+      </div>
+      <div class="mm-scores">
+        ${Object.entries(comp.scores||{}).map(([k,v])=>`
+          <div class="mm-score">
+            <div class="mms-val">${v}</div>
+            <div class="mms-label">${scoreLabels[k]||k}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="mm-filterbar">
+      <span class="mf-label">Section</span>
+      <div class="mf-btns">
+        <div class="mf-btn ${activeSection==='all'?'active':''}" onclick="setSectionFilter('all')">All</div>
+        ${allSections.map(t=>`
+          <div class="mf-btn ${activeSection===t?'active':''}" onclick="setSectionFilter('${t}')">${t.charAt(0).toUpperCase()+t.slice(1)}</div>`).join('')}
+      </div>
+    </div>
+    <div class="mm-content">
+      <div class="sw-strip">
+        <div class="sw-box"><div class="swb-label s">Strengths</div>${comp.strengths.map(s=>`<div class="swb-item"><div class="swb-dot" style="background:#3b82f6"></div>${s}</div>`).join('')}</div>
+        <div class="sw-box"><div class="swb-label w">Weaknesses</div>${comp.weaknesses.map(s=>`<div class="swb-item"><div class="swb-dot" style="background:#f87171"></div>${s}</div>`).join('')}</div>
+        <div class="sw-box"><div class="swb-label t">Apply</div>${comp.takeaways.map(s=>`<div class="swb-item"><div class="swb-dot" style="background:var(--a)"></div>${s}</div>`).join('')}</div>
+      </div>
+      <div class="section-count">${filtered.length} sections</div>
+      <div class="pages-grid" id="pagesGrid">
+        ${filtered.map((pg,pi)=>`
+          <div class="pg-card" id="pgcard-${pi}" onclick="openPageDrawer2(${activeCompIdx},${currentData.competitors[activeCompIdx].pages.indexOf(pg)})">
+            <div class="pgc-mockup">
+              <svg width="100%" height="100%" viewBox="0 0 400 124" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">${(SECTION_MOCKUPS[pg.type]||SECTION_MOCKUPS.grid)(pi)}</svg>
+              <div class="pgc-section-tag">${pg.section}</div>
+            </div>
+            <div class="pgc-info">
+              <div class="pgc-tags">${pg.tags.map(t=>`<span class="pgc-tag">${t}</span>`).join('')}</div>
+              <div class="pgc-insight">${pg.insight}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  c.innerHTML = `
+    <div class="mobbin-layout" style="height:calc(100vh - 96px)">
+      <div class="mobbin-sidebar">
+        <div class="msb-head">
+          <div class="msb-title">Sites</div>
+          <div class="msb-count">${deepCount} analyzed · ${currentData.competitors.length - deepCount} link only</div>
+        </div>
+        <div class="msb-list">${sidebarItems}</div>
+      </div>
+      <div class="mobbin-main">${mainArea}</div>
+    </div>`;
+
+  // Animate cards in
+  setTimeout(()=>{
+    document.querySelectorAll('.pg-card').forEach((el,i)=>{
+      setTimeout(()=>el.classList.add('mounted'), i*50);
+    });
+  }, 50);
+}
+
+function selectComp(i) {
+  activeCompIdx = i;
+  activeSection = 'all';
+  renderCompetitors(document.getElementById('tabContent'));
+}
+
+function setSectionFilter(s) {
+  activeSection = s;
+  renderCompetitors(document.getElementById('tabContent'));
+}
+
+function openPageDrawer2(compIdx, pageIdx) {
+  const comp = currentData.competitors[compIdx];
+  const pg = comp.pages[pageIdx];
+  document.getElementById('drawerContent').innerHTML = `
+    <div class="dr-tag">${comp.name} · Page Analysis</div>
+    <div class="dr-title">${pg.section}</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin:10px 0">
+      ${pg.tags.map(t=>`<span class="pgc-tag">${t}</span>`).join('')}
+    </div>
+    <div class="dr-divider"></div>
+    <div class="dr-section">
+      <div class="drs-label">Analysis</div>
+      <div class="dr-text">${pg.annotation}</div>
+    </div>
+    <div class="dr-divider"></div>
+    <div class="dr-section">
+      <div class="drs-label">OTB Apply</div>
+      <div style="padding:10px 12px;background:var(--a10);border:1px solid var(--a20);border-radius:var(--r);font-size:11px;color:var(--a);font-weight:600">
+        → ${pg.insight}
+      </div>
+    </div>
+    <div class="dr-divider"></div>
+    <div class="dr-section">
+      <div class="drs-label">All Insights (${comp.name})</div>
+      <div class="dr-list">
+        ${comp.takeaways.map(t=>`<div class="dr-list-item"><div style="width:4px;height:4px;border-radius:50%;background:var(--a);flex-shrink:0;margin-top:5px"></div>${t}</div>`).join('')}
+      </div>
+    </div>
+    <div class="dr-divider"></div>
+    <div class="dr-section">
+      <div class="drs-label">Scores</div>
+      ${Object.entries(comp.scores).map(([k,v])=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:9px;color:var(--wd);min-width:70px;text-transform:capitalize">${k}</div>
+          <div style="flex:1;height:2px;background:var(--border);border-radius:1px">
+            <div style="height:100%;background:var(--a);width:${v*10}%;border-radius:1px"></div>
+          </div>
+          <div style="font-family:var(--fd);font-size:12px;font-weight:700;min-width:24px;text-align:right">${v}</div>
+        </div>`).join('')}
+    </div>`;
+  openDrawer();
+}
+
+
+
+
+// ── CONCEPTS ────────────────────────────────────────────
+function renderConcepts(c) {
+  const variant = currentData.concepts.find(v => v.variant === activeVariant) || currentData.concepts[0];
+  c.innerHTML = `
+    <div class="concept-toggle">
+      ${currentData.concepts.map((v,i)=>{
+        const meta = CONCEPT_META[v.variant] || {};
+        const label = meta.label || v.variant;
+        const tip   = (meta.tip||{})[UI_LANG] || '';
+        return `
+          <div class="variant-btn ${v.variant===activeVariant?'active':''}" onclick="setVariant('${v.variant}')">
+            ${v.variant}
+            ${tip ? `<div class="vbtn-tooltip">${tip}</div>` : ''}
+          </div>
+          <span class="variant-label">${label}</span>
+          ${i < currentData.concepts.length-1 ? '<span style="color:rgba(255,255,255,.1);margin:0 6px">|</span>' : ''}
+        `;
+      }).join('')}
+    </div>
+    <div class="concept-body">
+      <div class="concept-card fade-up">
+        <div class="concept-card-head">
+          <div class="cv-badge">${variant.variant}</div>
+          <div class="cv-info">
+            <div class="cv-label">${CONCEPT_META[variant.variant]?.label || variant.label}</div>
+            <div class="cv-liner">${variant.oneLiner}</div>
+          </div>
+          <button class="copy-prompt-btn" onclick="copyPrompt('${variant.variant}')">
+            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy Prompt
+          </button>
+        </div>
+        <div class="concept-card-body">
+          <div class="cb-section">
+            <div class="cbs-label">Layout Flow</div>
+            <div class="layout-flow">
+              ${variant.layout.map((l,i)=>`<div class="lf-item"><span class="lf-num">${String(i+1).padStart(2,'0')}</span><div class="lf-line"></div>${l}</div>`).join('')}
+            </div>
+          </div>
+          <div class="cb-section">
+            <div class="cbs-label">Copy Samples</div>
+            <div class="copy-list">
+              ${variant.copySamples.map(s=>`<div class="copy-item">"${s}"</div>`).join('')}
+            </div>
+            <div class="cbs-label" style="margin-top:16px">Prompt</div>
+            <div class="dr-prompt">${variant.prompt}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function setVariant(v) {
+  activeVariant = v;
+  renderConcepts(document.getElementById('tabContent'));
+}
+
+function copyPrompt(variant) {
+  const v = currentData.concepts.find(c => c.variant === variant);
+  if(!v) return;
+  navigator.clipboard.writeText(v.prompt).catch(() => {});
+  showToast('Copied to clipboard');
+}
+
+// ── DRAWERS ────────────────────────────────────────────
+function openPatternDrawer(i) {
+  const pt = currentData.packet.topPatterns[i];
+  document.getElementById('drawerContent').innerHTML = `
+    <div class="dr-tag">UX Pattern</div>
+    <div class="dr-title">${pt.title}</div>
+    <div class="dr-sub">${pt.desc}</div>
+    <div class="dr-divider"></div>
+    <div class="dr-section">
+      <div class="drs-label">When to use</div>
+      <div class="dr-text">이 패턴은 신뢰 구축과 전환율 향상에 효과적입니다. 브리프의 목표와 타깃 고객에 맞게 조정하여 적용하세요.</div>
+    </div>`;
+  openDrawer();
+}
+
+
+
+function openDrawer() {
+  document.getElementById('drawerOverlay').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+// ── TOAST ────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.querySelector('span') && (t.childNodes[t.childNodes.length-1].textContent = ' ' + msg);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ESC to close drawer
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closeDrawer();
+});
+
+// ── PROMPTS ────────────────────────────────────────────
+let activePromptVariant = 'A';
+let expandedPrompts = new Set();
+
+function buildPrompts(data, variant) {
+  const b = data.brief;
+  const p = data.packet;
+  const v = data.concepts.find(c=>c.variant===variant) || data.concepts[0];
+  const comps = data.competitors;
+  
+  const kw = p.keywords.join(', ');
+  const tone = p.toneGuide.join(' ');
+  const patterns = p.topPatterns.map(pt=>`- ${pt.title}: ${pt.desc}`).join('\n');
+  const compInsights = comps.flatMap(c=>c.takeaways).map(t=>`- ${t}`).join('\n');
+  const compNames = comps.map(c=>c.name).join(', ');
+  const layout = v.layout.join(' → ');
+  const copies = v.copySamples.map(s=>`"${s}"`).join(', ');
+
+  return [
+    {
+      id:'landing-page',
+      type:'page',
+      title:'Landing Page — Full Build',
+      desc:`${b.projectName} / ${variant} variant / ${v.label}`,
+      stack:['React','TypeScript','Tailwind','Framer Motion'],
+      prompt:`You are a senior frontend engineer and product designer.
+Build a complete landing page for <mark>${b.projectName}</mark>.
+
+<span class="pcp-comment">// ─── PROJECT CONTEXT ───────────────────────────────</span>
+Industry: ${b.industry}
+Goal: ${b.goal}
+Target: ${b.targetAudience}
+Channel: ${b.channel}
+Constraints: ${b.constraints}
+
+<span class="pcp-comment">// ─── DESIGN STRATEGY ──────────────────────────────</span>
+Variant: <mark>${v.label}</mark>
+One-liner: ${v.oneLiner}
+Layout flow: <mark>${layout}</mark>
+
+Tone: ${tone}
+Keywords to express visually: ${kw}
+
+<span class="pcp-comment">// ─── COMPETITOR INSIGHTS ──────────────────────────</span>
+References analyzed: ${compNames}
+Apply these patterns:
+${compInsights}
+
+<span class="pcp-comment">// ─── UX PATTERNS TO IMPLEMENT ────────────────────</span>
+${patterns}
+
+<span class="pcp-comment">// ─── COPY DIRECTION ───────────────────────────────</span>
+Sample copy: ${copies}
+
+<span class="pcp-comment">// ─── TECH REQUIREMENTS ────────────────────────────</span>
+- Framework: Next.js App Router + TypeScript
+- Styling: Tailwind CSS + CSS variables for theme
+- Animation: Framer Motion for scroll reveals and micro-interactions
+- Responsive: mobile-first, test at 375px / 768px / 1440px
+- Performance: LCP < 2.5s, no layout shift
+
+<span class="pcp-comment">// ─── OUTPUT ───────────────────────────────────────</span>
+Deliver: /app/page.tsx + /components/ directory
+Each section as a separate component file.
+Include TypeScript interfaces for all props.`
+    },
+    {
+      id:'hero-section',
+      type:'component',
+      title:'Hero Section Component',
+      desc:'첫 화면 컴포넌트 — 가장 높은 전환 영향도',
+      stack:['React','Tailwind','Framer Motion'],
+      prompt:`Build the <mark>Hero section</mark> for ${b.projectName}.
+
+<span class="pcp-comment">// ─── REFERENCE PATTERN ────────────────────────────</span>
+${comps[0] ? `Analyze: ${comps[0].name}
+Their hero approach: ${(comps[0].pages||[]).find(p=>p.section==='Hero')?.annotation || 'Not available'}
+Our differentiator: ${(comps[0].pages||[]).find(p=>p.section==='Hero')?.insight || 'Lead with outcome'}` : 'Lead with outcome, not feature.'}
+
+<span class="pcp-comment">// ─── CONTENT ──────────────────────────────────────</span>
+Headline tone: ${p.toneGuide[0]}
+Sample copy: ${copies}
+Keywords: ${kw}
+
+<span class="pcp-comment">// ─── COMPONENT SPEC ───────────────────────────────</span>
+interface HeroProps {
+  headline: string;
+  subline: string;
+  ctaText: string;
+  ctaHref: string;
+  trustBadge?: string;
+}
+
+Requirements:
+- Full viewport height on desktop, auto on mobile
+- Headline: large display font, animated word-by-word reveal
+- CTA button: primary action, hover state with scale + glow
+- Trust element: small badge or stat strip below CTA
+- Background: subtle gradient or noise texture (no stock photos)
+- Framer Motion: stagger children animation on mount`
+    },
+    {
+      id:'design-tokens',
+      type:'style',
+      title:'Design Tokens & Theme',
+      desc:'색상, 타이포, 스페이싱 — 전체 시스템 기반',
+      stack:['CSS Variables','Tailwind Config','TypeScript'],
+      prompt:`Create the <mark>design token system</mark> for ${b.projectName}.
+
+<span class="pcp-comment">// ─── BRAND CONTEXT ────────────────────────────────</span>
+Industry: ${b.industry}
+Tone keywords: ${kw}
+Constraints: ${b.constraints}
+
+<span class="pcp-comment">// ─── TOKEN SPEC ───────────────────────────────────</span>
+Generate:
+1. /styles/tokens.css — CSS custom properties
+   - Color palette (primary, surface, text, border scales)
+   - Typography scale (display / heading / body / caption)
+   - Spacing scale (4px base)
+   - Border radius system
+   - Shadow system
+
+2. tailwind.config.ts — extend with all tokens
+   - Map CSS vars to Tailwind utilities
+
+3. /styles/typography.css — font-face + base styles
+
+<span class="pcp-comment">// ─── STYLE DIRECTION ──────────────────────────────</span>
+${v.oneLiner}
+Visual references: ${compNames}
+Avoid: generic purple gradients, over-use of shadows, comic sans vibes.
+Target feeling: ${p.toneGuide.join(' ')}
+
+Output all three files with full content.`
+    },
+    {
+      id:'scroll-animation',
+      type:'interaction',
+      title:'Scroll Animation System',
+      desc:'섹션 진입 애니메이션 + 스크롤 트리거',
+      stack:['Framer Motion','React Hook','Intersection Observer'],
+      prompt:`Build a <mark>scroll animation system</mark> for ${b.projectName}.
+
+<span class="pcp-comment">// ─── ANIMATION DIRECTION ──────────────────────────</span>
+Variant: ${v.label}
+Feel: ${p.toneGuide[0]}
+${variant === 'C' ? 'Experimental: use scroll-linked progress values for parallax' : 'Clean reveal: fade-up with stagger, no gimmicks'}
+
+<span class="pcp-comment">// ─── DELIVERABLES ─────────────────────────────────</span>
+1. /hooks/useScrollReveal.ts
+   - useInView wrapper with configurable threshold
+   - Returns { ref, isVisible, progress }
+
+2. /components/ui/Reveal.tsx
+   - Wrapper component for any child element
+   - Props: delay, direction (up|left|right|fade), duration
+   - Uses Framer Motion variants
+
+3. /components/ui/ParallaxLayer.tsx (if variant C)
+   - useScroll + useTransform
+   - Configurable speed factor
+
+<span class="pcp-comment">// ─── USAGE EXAMPLE ────────────────────────────────</span>
+<Reveal delay={0.2} direction="up">
+  <HeroSection />
+</Reveal>
+
+Performance requirements:
+- will-change: transform only during animation
+- Respect prefers-reduced-motion
+- No jank at 60fps on mobile`
+    },
+    {
+      id:'competitor-brief',
+      type:'system',
+      title:'Competitive Reference Brief',
+      desc:'경쟁사 분석 기반 전체 컨텍스트 — AI 코딩에 붙여넣기용',
+      stack:['Context Document','AI Prompt'],
+      prompt:`<span class="pcp-comment">// COMPETITIVE CONTEXT FOR ${b.projectName.toUpperCase()}</span>
+<span class="pcp-comment">// Paste this at the start of your AI coding session as shared context</span>
+
+<mark>PROJECT:</mark> ${b.projectName}
+Industry: ${b.industry} | Goal: ${b.goal}
+Target: ${b.targetAudience} | Channel: ${b.channel}
+
+<mark>COMPETITIVE LANDSCAPE:</mark>
+${comps.map(c=>`
+${c.name} (${c.url}) — Scores: fit ${c.scores.fit} / clarity ${c.scores.clarity} / conversion ${c.scores.conversion} / innovation ${c.scores.innovation}
+  ✓ ${c.strengths.join(' · ')}
+  ✗ ${c.weaknesses.join(' · ')}
+  → Apply: ${c.takeaways.join(' · ')}`).join('\n')}
+
+<mark>DESIGN STRATEGY (${v.label}):</mark>
+${v.oneLiner}
+Layout: ${layout}
+Copy direction: ${copies}
+
+<mark>UX PATTERNS TO IMPLEMENT:</mark>
+${p.topPatterns.map(pt=>`→ ${pt.title}: ${pt.desc}`).join('\n')}
+
+<mark>TONE & KEYWORDS:</mark>
+${tone}
+Keywords: ${kw}
+
+<span class="pcp-comment">// Keep this context in mind for ALL components in this session.</span>`
+    }
+  ];
+}
+
+// SVG visuals for each prompt type
+const PROMPT_VISUALS = {
+  'landing-page': (kw) => `
+    <svg width="100%" height="100%" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs><radialGradient id="pg1" cx="50%" cy="40%"><stop offset="0%" stop-color="#ff5c1a" stop-opacity=".25"/><stop offset="100%" stop-color="#000" stop-opacity="1"/></radialGradient></defs>
+      <rect width="600" height="400" fill="#050505"/>
+      <rect width="600" height="400" fill="url(#pg1)"/>
+      <rect x="0" y="0" width="600" height="40" fill="rgba(255,255,255,.03)"/>
+      <rect x="20" y="12" width="60" height="16" rx="3" fill="rgba(255,92,26,.4)"/>
+      <rect x="420" y="14" width="80" height="12" rx="2" fill="rgba(255,255,255,.08)"/>
+      <rect x="510" y="10" width="70" height="20" rx="10" fill="rgba(255,92,26,.3)"/>
+      <rect x="100" y="90" width="400" height="40" rx="4" fill="rgba(255,255,255,.08)"/>
+      <rect x="140" y="138" width="320" height="20" rx="3" fill="rgba(255,255,255,.04)"/>
+      <rect x="180" y="164" width="240" height="14" rx="2" fill="rgba(255,255,255,.03)"/>
+      <rect x="210" y="192" width="180" height="36" rx="4" fill="rgba(255,92,26,.35)"/>
+      <rect x="20" y="270" width="560" height="1" fill="rgba(255,255,255,.06)"/>
+      <rect x="20" y="288" width="120" height="60" rx="4" fill="rgba(255,255,255,.04)"/>
+      <rect x="160" y="288" width="120" height="60" rx="4" fill="rgba(255,255,255,.04)"/>
+      <rect x="300" y="288" width="120" height="60" rx="4" fill="rgba(255,255,255,.04)"/>
+      <rect x="440" y="288" width="120" height="60" rx="4" fill="rgba(255,92,26,.08)"/>
+    </svg>`,
+  'hero-section': (kw) => `
+    <svg width="100%" height="100%" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="hg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1a0a00"/><stop offset="100%" stop-color="#0a0a0a"/></linearGradient></defs>
+      <rect width="600" height="400" fill="url(#hg1)"/>
+      <circle cx="300" cy="180" r="120" fill="rgba(255,92,26,.06)" stroke="rgba(255,92,26,.1)" stroke-width="1"/>
+      <circle cx="300" cy="180" r="80" fill="rgba(255,92,26,.08)" stroke="rgba(255,92,26,.15)" stroke-width="1"/>
+      <rect x="120" y="120" width="360" height="50" rx="4" fill="rgba(255,255,255,.07)"/>
+      <rect x="160" y="178" width="280" height="22" rx="3" fill="rgba(255,255,255,.04)"/>
+      <rect x="200" y="208" width="200" height="14" rx="2" fill="rgba(255,255,255,.03)"/>
+      <rect x="220" y="236" width="160" height="38" rx="19" fill="rgba(255,92,26,.5)"/>
+      <rect x="40" y="340" width="520" height="1" fill="rgba(255,255,255,.06)"/>
+      <rect x="40" y="355" width="80" height="20" rx="3" fill="rgba(255,255,255,.05)"/>
+      <rect x="140" y="355" width="80" height="20" rx="3" fill="rgba(255,255,255,.05)"/>
+      <rect x="240" y="355" width="80" height="20" rx="3" fill="rgba(255,255,255,.05)"/>
+    </svg>`,
+  'design-tokens': (kw) => `
+    <svg width="100%" height="100%" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="400" fill="#060606"/>
+      <rect x="20" y="20" width="270" height="360" rx="6" fill="rgba(255,255,255,.02)" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      <rect x="310" y="20" width="270" height="360" rx="6" fill="rgba(255,255,255,.02)" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      <rect x="36" y="40" width="80" height="8" rx="2" fill="rgba(255,92,26,.4)"/>
+      <rect x="36" y="58" width="240" height="6" rx="1" fill="rgba(255,255,255,.05)"/>
+      <rect x="36" y="80" width="30" height="30" rx="4" fill="#ff5c1a"/>
+      <rect x="74" y="80" width="30" height="30" rx="4" fill="#ff7a3d"/>
+      <rect x="112" y="80" width="30" height="30" rx="4" fill="#000"/>
+      <rect x="150" y="80" width="30" height="30" rx="4" fill="#f2f2f0"/>
+      <rect x="188" y="80" width="30" height="30" rx="4" fill="rgba(255,255,255,.12)"/>
+      <rect x="36" y="126" width="80" height="8" rx="2" fill="rgba(255,255,255,.2)"/>
+      <rect x="36" y="142" width="238" height="28" rx="3" fill="rgba(255,255,255,.04)"/>
+      <rect x="36" y="180" width="180" height="20" rx="3" fill="rgba(255,255,255,.04)"/>
+      <rect x="36" y="210" width="130" height="14" rx="3" fill="rgba(255,255,255,.04)"/>
+      <rect x="36" y="236" width="90" height="10" rx="3" fill="rgba(255,255,255,.04)"/>
+      <rect x="326" y="40" width="100" height="8" rx="2" fill="rgba(167,139,250,.5)"/>
+      <rect x="326" y="58" width="240" height="6" rx="1" fill="rgba(255,255,255,.05)"/>
+      <rect x="326" y="80" width="60" height="8" rx="2" fill="rgba(255,255,255,.12)"/>
+      <rect x="326" y="96" width="80" height="8" rx="2" fill="rgba(255,255,255,.08)"/>
+      <rect x="326" y="112" width="100" height="8" rx="2" fill="rgba(255,255,255,.06)"/>
+      <rect x="326" y="128" width="70" height="8" rx="2" fill="rgba(255,255,255,.04)"/>
+      <rect x="326" y="160" width="238" height="1" fill="rgba(255,255,255,.06)"/>
+      <rect x="326" y="178" width="120" height="32" rx="4" fill="rgba(255,92,26,.12)" stroke="rgba(255,92,26,.2)" stroke-width="1"/>
+      <rect x="326" y="222" width="80" height="20" rx="10" fill="rgba(255,255,255,.05)"/>
+    </svg>`,
+  'scroll-animation': (kw) => `
+    <svg width="100%" height="100%" viewBox="0 0 1200 530" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="ag1" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#ff5c1a" stop-opacity=".15"/>
+          <stop offset="100%" stop-color="#000" stop-opacity="1"/>
+        </linearGradient>
+      </defs>
+      <rect width="1200" height="530" fill="#040404"/>
+      <rect x="0" y="0" width="1200" height="530" fill="url(#ag1)"/>
+      <rect x="60" y="80" width="480" height="6" rx="3" fill="rgba(255,255,255,.12)" opacity="1"/>
+      <rect x="60" y="80" width="300" height="6" rx="3" fill="rgba(255,92,26,.6)"/>
+      <rect x="60" y="140" width="480" height="6" rx="3" fill="rgba(255,255,255,.06)" opacity=".7"/>
+      <rect x="60" y="140" width="180" height="6" rx="3" fill="rgba(255,92,26,.3)" opacity=".7"/>
+      <rect x="60" y="200" width="480" height="6" rx="3" fill="rgba(255,255,255,.03)" opacity=".5"/>
+      <rect x="60" y="260" width="480" height="6" rx="3" fill="rgba(255,255,255,.02)" opacity=".3"/>
+      <rect x="620" y="60" width="520" height="400" rx="8" fill="rgba(255,255,255,.02)" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      <rect x="640" y="100" width="480" height="80" rx="4" fill="rgba(255,255,255,.04)"/>
+      <rect x="640" y="196" width="480" height="60" rx="4" fill="rgba(255,255,255,.03)" opacity=".7"/>
+      <rect x="640" y="272" width="480" height="50" rx="4" fill="rgba(255,255,255,.02)" opacity=".5"/>
+      <rect x="640" y="338" width="480" height="40" rx="4" fill="rgba(255,255,255,.01)" opacity=".3"/>
+      <circle cx="600" cy="140" r="16" fill="rgba(255,92,26,.3)" stroke="rgba(255,92,26,.6)" stroke-width="1.5"/>
+      <line x1="600" y1="156" x2="600" y2="220" stroke="rgba(255,92,26,.2)" stroke-width="1" stroke-dasharray="4 4"/>
+      <circle cx="600" cy="226" r="8" fill="rgba(255,92,26,.15)" stroke="rgba(255,92,26,.3)" stroke-width="1"/>
+    </svg>`,
+  'competitor-brief': (kw) => `
+    <svg width="100%" height="100%" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <rect width="600" height="400" fill="#050505"/>
+      <rect x="20" y="20" width="170" height="360" rx="6" fill="rgba(255,255,255,.02)" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      <rect x="36" y="40" width="60" height="8" rx="2" fill="rgba(251,191,36,.5)"/>
+      <rect x="36" y="60" width="140" height="22" rx="3" fill="rgba(255,255,255,.05)"/>
+      <rect x="36" y="60" width="140" height="22" rx="3" fill="rgba(255,92,26,.08)"/>
+      <rect x="36" y="88" width="140" height="22" rx="3" fill="rgba(255,255,255,.04)"/>
+      <rect x="36" y="116" width="140" height="22" rx="3" fill="rgba(255,255,255,.04)"/>
+      <rect x="208" y="20" width="372" height="160" rx="6" fill="rgba(255,255,255,.02)" stroke="rgba(255,92,26,.12)" stroke-width="1"/>
+      <rect x="224" y="40" width="120" height="10" rx="2" fill="rgba(255,92,26,.35)"/>
+      <rect x="224" y="58" width="336" height="6" rx="1" fill="rgba(255,255,255,.06)"/>
+      <rect x="224" y="70" width="280" height="6" rx="1" fill="rgba(255,255,255,.04)"/>
+      <rect x="224" y="82" width="300" height="6" rx="1" fill="rgba(255,255,255,.04)"/>
+      <rect x="224" y="100" width="60" height="6" rx="1" fill="rgba(52,211,153,.4)"/>
+      <rect x="224" y="112" width="230" height="5" rx="1" fill="rgba(255,255,255,.04)"/>
+      <rect x="224" y="122" width="200" height="5" rx="1" fill="rgba(255,255,255,.04)"/>
+      <rect x="224" y="136" width="60" height="6" rx="1" fill="rgba(248,113,113,.4)"/>
+      <rect x="224" y="148" width="200" height="5" rx="1" fill="rgba(255,255,255,.04)"/>
+      <rect x="208" y="196" width="180" height="90" rx="6" fill="rgba(255,255,255,.02)" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      <rect x="400" y="196" width="180" height="90" rx="6" fill="rgba(255,255,255,.02)" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      <rect x="208" y="302" width="372" height="78" rx="6" fill="rgba(255,92,26,.06)" stroke="rgba(255,92,26,.15)" stroke-width="1"/>
+      <rect x="224" y="318" width="80" height="8" rx="2" fill="rgba(255,92,26,.4)"/>
+      <rect x="224" y="334" width="336" height="5" rx="1" fill="rgba(255,255,255,.06)"/>
+      <rect x="224" y="344" width="280" height="5" rx="1" fill="rgba(255,255,255,.04)"/>
+    </svg>`
+};
+
+function renderPrompts(c) {
+  if(!currentData) return;
+  const prompts = buildPrompts(currentData, activePromptVariant);
+  window._currentPrompts = prompts;
+
+  c.innerHTML = `
+    <div class="prompts-outer">
+      <div class="prompt-topbar">
+        <span class="ptb-label">Concept</span>
+        <div class="psb-btns">
+          ${currentData.concepts.map(v=>`
+            <div class="psb-btn ${v.variant===activePromptVariant?'active':''}" onclick="setPromptVariant('${v.variant}')">
+              ${v.variant} · ${v.label.split(' ')[0]}
+            </div>`).join('')}
+        </div>
+        <button class="copy-all-btn" onclick="copyAllPrompts()">
+          <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy All
+        </button>
+      </div>
+
+      <div class="prompts-grid">
+        ${prompts.map((pr,i)=>`
+          <div class="pm-card fade-up" onclick="openPromptDetail(${i})">
+            <div class="pm-visual">
+              ${PROMPT_VISUALS[pr.id] ? PROMPT_VISUALS[pr.id](pr.title) : PROMPT_VISUALS['landing-page'](pr.title)}
+            </div>
+            <div class="pm-overlay"></div>
+            <span class="pm-type-label ${pr.type}">${pr.type}</span>
+            <div class="pm-static">
+              <div class="pm-stack-pills">
+                ${pr.stack.slice(0,2).map(s=>`<span class="pm-stack-pill">${s}</span>`).join('')}
+              </div>
+            </div>
+            <div class="pm-card-info">
+              <div class="pm-card-title">${pr.title}</div>
+              <div style="display:flex;gap:6px">
+                <button class="pm-copy-btn" onclick="event.stopPropagation();copySinglePrompt('${pr.id}')">
+                  <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  Copy
+                </button>
+                <button class="pm-run-btn" onclick="event.stopPropagation();runPrompt(${i})">
+                  <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Run
+                </button>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Detail modal -->
+    <div class="pm-detail" id="pmDetail" onclick="closePromptDetail(event)">
+      <div class="pm-detail-box" id="pmDetailBox"></div>
+    </div>`;
+}
+
+function openPromptDetail(i) {
+  const pr = (window._currentPrompts||[])[i];
+  if(!pr) return;
+  const box = document.getElementById('pmDetailBox');
+  box.innerHTML = `
+    <div class="pmdb-head">
+      <span class="pmdb-type pc-type ${pr.type}">${pr.type}</span>
+      <div class="pmdb-title">${pr.title}</div>
+      <div class="pmdb-close" onclick="document.getElementById('pmDetail').classList.remove('open')">
+        <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </div>
+    </div>
+    <div class="pmdb-body">
+      <div class="pmdb-prompt">${pr.prompt}</div>
+    </div>
+    <div class="pmdb-foot">
+      <div class="pmdb-stack">${pr.stack.map(s=>`<span class="pmdb-stag">${s}</span>`).join('')}</div>
+      <button class="pmdb-copy-btn" onclick="copySinglePrompt('${pr.id}')">
+        <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+      <button class="pmdb-copy-btn" style="background:transparent;border:1px solid var(--a20);color:var(--a);display:flex;align-items:center;gap:6px" onclick="runPrompt(${i})">
+        <svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Run AI
+      </button>
+    </div>`;
+  document.getElementById('pmDetail').classList.add('open');
+}
+
+function closePromptDetail(e) {
+  if(e.target === document.getElementById('pmDetail')) {
+    document.getElementById('pmDetail').classList.remove('open');
+  }
+}
+
+function copySinglePrompt(id) {
+  const pr = (window._currentPrompts||[]).find(p=>p.id===id);
+  if(!pr) return;
+  const plain = pr.prompt.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  navigator.clipboard.writeText(plain).catch(()=>{});
+  showToast('Prompt copied!');
+}
+
+function copyAllPrompts() {
+  if(!window._currentPrompts) return;
+  const all = window._currentPrompts.map(p=>{
+    const plain = p.prompt.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+    return '='.repeat(60)+'\n'+p.title.toUpperCase()+'\n'+'='.repeat(60)+'\n'+plain;
+  }).join('\n\n');
+  navigator.clipboard.writeText(all).catch(()=>{});
+  showToast('All prompts copied!');
+}
+
+function setPromptVariant(v) {
+  activePromptVariant = v;
+  renderPrompts(document.getElementById('tabContent'));
+}
+
+
+
+
+
+
+
+// ── AI RUN + PREVIEW ────────────────────────────────
+let arpCurrentCode = '';
+let arpCurrentTab = 'text';
+
+function runPrompt(idx) {
+  const pr = (window._currentPrompts||[])[idx];
+  if(!pr) return;
+
+  // Open panel
+  openArpPanel();
+  setArpStatus('running', 'Generating...');
+  document.getElementById('arpStream').innerHTML = '';
+  document.getElementById('arpSkeleton').style.display = 'flex';
+  document.getElementById('arpSkeleton').style.flexDirection = 'column';
+  document.getElementById('arpCodePre').textContent = '// Generating code...';
+  document.getElementById('arpIframe').srcdoc = '';
+  arpCurrentCode = '';
+
+  // Build system prompt based on type
+  const systemPrompts = {
+    'landing-page': 'You are a senior frontend engineer. The user will give you a project brief. Respond with: 1) A structured analysis with sections: ## Strategy, ## Key Patterns, ## Copy Direction, ## Tech Approach. Then provide a complete self-contained HTML page with inline CSS and JS that demonstrates the landing page concept. Wrap the HTML in ```html code blocks. Be specific and actionable.',
+    'hero-section': 'You are a senior React/TypeScript engineer. Analyze the brief and provide: 1) ## Component Analysis with key design decisions. 2) A complete React TSX component with Tailwind classes. Wrap code in ```tsx blocks. Include realistic copy based on the brief.',
+    'design-tokens': 'You are a design systems engineer. Provide: 1) ## Token Strategy explaining your choices. 2) Complete CSS custom properties file. 3) Tailwind config extension. Wrap each file in appropriate code blocks.',
+    'scroll-animation': 'You are a frontend animation specialist. Provide: 1) ## Animation Strategy. 2) A complete React hook and component implementation. Include working Framer Motion code. Wrap in ```tsx blocks.',
+    'competitor-brief': 'You are a UX strategist. Analyze the competitive landscape provided and give: ## Market Position, ## Key Differentiators, ## Risk Areas, ## Recommended Direction. Be specific and data-driven based on the scores provided.'
+  };
+
+  const system = systemPrompts[pr.id] || systemPrompts['landing-page'];
+  const plain = pr.prompt.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+
+  callClaudeStream(system, plain);
+}
+
+async function callClaudeStream(system, userMsg) {
+  const skeleton = document.getElementById('arpSkeleton');
+  const stream = document.getElementById('arpStream');
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: system,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+
+    const data = await res.json();
+    skeleton.style.display = 'none';
+
+    if(data.error) {
+      setArpStatus('error', 'Error');
+      stream.innerHTML = `<div style="color:#f87171;font-size:11px">${data.error.message}</div>`;
+      return;
+    }
+
+    const text = data.content?.[0]?.text || '';
+    renderArpText(text);
+    extractAndRenderCode(text);
+    setArpStatus('done', 'Done');
+
+  } catch(e) {
+    skeleton.style.display = 'none';
+    setArpStatus('error', 'Failed');
+    document.getElementById('arpStream').innerHTML = `<div style="color:#f87171;font-size:11px">Network error. Check connection.</div>`;
+  }
+}
+
+function renderArpText(text) {
+  const stream = document.getElementById('arpStream');
+  // Convert markdown-like to HTML
+  let html = text
+    .replace(/```[\w]*\n?([\s\S]*?)```/g, '') // remove code blocks from text view
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^- (.+)$/gm, '<div style="display:flex;gap:6px;margin-bottom:3px"><span style="color:var(--a);flex-shrink:0">→</span><span>$1</span></div>')
+    .replace(/\n/g, '<br>');
+  stream.innerHTML = html || text;
+
+  // Animate in
+  stream.style.opacity = '0';
+  stream.style.transform = 'translateY(8px)';
+  requestAnimationFrame(() => {
+    stream.style.transition = 'all .4s ease';
+    stream.style.opacity = '1';
+    stream.style.transform = 'none';
+  });
+}
+
+function extractAndRenderCode(text) {
+  // Extract code blocks
+  const codeMatch = text.match(/```(?:html|tsx?|jsx?|css)?\n?([\s\S]+?)```/);
+  if(!codeMatch) return;
+
+  const code = codeMatch[1].trim();
+  arpCurrentCode = code;
+  document.getElementById('arpCodePre').textContent = code;
+
+  // If HTML, render in iframe
+  const isHtml = text.includes('```html') || code.trim().startsWith('<!DOCTYPE') || code.trim().startsWith('<html') || code.includes('<body');
+  if(isHtml) {
+    const iframe = document.getElementById('arpIframe');
+    iframe.srcdoc = code;
+    // Auto-switch to preview
+    setTimeout(() => switchArpTab('preview'), 300);
+  }
+}
+
+function openArpPanel() {
+  document.getElementById('aiResultPanel').classList.add('open');
+  switchArpTab('text');
+}
+
+function closeArpPanel() {
+  document.getElementById('aiResultPanel').classList.remove('open');
+}
+
+function setArpStatus(state, label) {
+  const dot = document.getElementById('arpDot');
+  const lbl = document.getElementById('arpLabel');
+  dot.className = 'arp-dot ' + state;
+  lbl.className = 'arp-label ' + state;
+  lbl.textContent = label;
+}
+
+function switchArpTab(tab) {
+  arpCurrentTab = tab;
+  document.querySelectorAll('.arp-tab').forEach(t => t.classList.toggle('active', t.dataset.arp === tab));
+  document.getElementById('arpText').className = 'arp-text' + (tab==='text'?' active':'');
+  document.getElementById('arpCode').className = 'arp-code' + (tab==='code'?' active':'');
+  document.getElementById('arpPreview').className = 'arp-preview' + (tab==='preview'?' active':'');
+}
+
+function copyArpCode() {
+  if(!arpCurrentCode) return;
+  navigator.clipboard.writeText(arpCurrentCode).catch(()=>{});
+  showToast('Code copied!');
+}
+
+</script>
+
+<!-- AI Result Panel -->
+<div class="ai-result-panel" id="aiResultPanel">
+  <div class="arp-head">
+    <div class="arp-status">
+      <div class="arp-dot" id="arpDot"></div>
+      <span class="arp-label" id="arpLabel">Ready</span>
+    </div>
+    <div class="arp-tabs">
+      <div class="arp-tab active" data-arp="text" onclick="switchArpTab('text')">Analysis</div>
+      <div class="arp-tab" data-arp="code" onclick="switchArpTab('code')">Code</div>
+      <div class="arp-tab" data-arp="preview" onclick="switchArpTab('preview')">Preview</div>
+    </div>
+    <div class="arp-close" onclick="closeArpPanel()"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></div>
+  </div>
+  <div class="arp-body">
+    <div class="arp-text active" id="arpText">
+      <div class="arp-skeleton" id="arpSkeleton" style="display:none">
+        <div class="sk-line" style="width:60%"></div>
+        <div class="sk-line" style="width:90%"></div>
+        <div class="sk-line" style="width:75%"></div>
+        <div class="sk-line" style="width:85%"></div>
+        <div class="sk-line" style="width:55%"></div>
+      </div>
+      <div class="arp-stream" id="arpStream"></div>
+    </div>
+    <div class="arp-code" id="arpCode">
+      <div class="arp-code-bar">
+        <span class="arp-lang">TSX / React</span>
+        <button class="arp-copy-code" onclick="copyArpCode()">Copy Code</button>
+      </div>
+      <div class="arp-code-content"><pre id="arpCodePre">// Code will appear here after generation...</pre></div>
+    </div>
+    <div class="arp-preview" id="arpPreview">
+      <div class="arp-preview-bar">
+        <span style="font-size:9px;color:var(--wd);font-weight:600;letter-spacing:.08em;text-transform:uppercase">Live Preview</span>
+        <span style="font-size:9px;color:var(--wd);margin-left:auto">Rendered output</span>
+      </div>
+      <iframe id="arpIframe" sandbox="allow-scripts"></iframe>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

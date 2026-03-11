@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OTB — Design Intelligence </title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#000;--surface:#0d0d0d;
+  --border:rgba(255,255,255,.07);--border-l:rgba(255,255,255,.12);
+  --w:#f2f2f0;--wd:rgba(242,242,240,.48);--wm:rgba(242,242,240,.26);
+  --a:#ff5c1a;--ab:#ff7a3d;--ad:rgba(255,92,26,.12);
+  --fd:'Syne',sans-serif;--fb:'DM Sans',sans-serif;--fk:'Nanum Gothic',sans-serif;
+}
+
+/* ── ROOT ── */
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#000;color:var(--w);font-family:var(--fb);-webkit-font-smoothing:antialiased}
+::selection{background:var(--a);color:#000}
+
+/* ── TRACK ── */
+#track{
+  display:flex;flex-direction:row;
+  height:100vh;
+  will-change:transform;
+}
+
+/* ── PANELS ── */
+.panel{
+  width:100vw;height:100vh;
+  flex-shrink:0;
+  position:relative;
+  overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ── NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  display:flex;justify-content:space-between;align-items:center;
+  padding:20px 40px;
+  opacity:0;pointer-events:none;
+  background:var(--a);
+  transition:opacity .35s;
+}
+nav.vis{opacity:1;pointer-events:all}
+nav.sc{}
+.nl{font-family:var(--fd);font-weight:800;font-size:32px;letter-spacing:-.04em;color:transparent;-webkit-text-stroke:.9px #000;cursor:pointer;line-height:1;transition:color .2s,-webkit-text-stroke .2s}
+.nl span{color:transparent;-webkit-text-stroke:.9px #000;transition:color .2s,-webkit-text-stroke .2s}
+.nl:hover{color:#000;-webkit-text-stroke:0px transparent}
+.nl:hover span{color:#000;-webkit-text-stroke:0px transparent}
+.nv{display:flex;gap:26px;list-style:none}
+.nv a{font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--wd);cursor:pointer;transition:color .2s;user-select:none}
+.nv a:hover,.nv a.act{color:var(--w)}
+.nc{font-size:9px;font-weight:600;padding:8px 14px;border:1px solid #000;border-radius:4px;color:#fff;background:#000;cursor:pointer;transition:all .2s;user-select:none;letter-spacing:.05em}
+.nc:hover{background:transparent;border-color:#000;color:#000}
+
+
+/* panel counter */
+.pcnt{
+  position:absolute;bottom:52px;left:40px;z-index:6;
+  font-family:var(--fd);font-size:clamp(7px,0.9vh,9px);font-weight:700;
+  letter-spacing:.22em;color:rgba(255,255,255,.12);text-transform:uppercase;
+}
+
+/* ── PROGRESS DOTS ── */
+#prog{
+  position:fixed;bottom:50px;left:50%;transform:translateX(-50%);
+  z-index:200;display:flex;flex-direction:row;gap:7px;align-items:center;
+  opacity:0;pointer-events:none;transition:opacity .35s;
+}
+#prog.vis{opacity:1;pointer-events:all}
+.pdot{
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,.2);
+  cursor:pointer;transition:background .3s,width .25s,border-radius .25s;
+  user-select:none;
+}
+.pdot.act{background:var(--a);width:18px;border-radius:3px}
+
+/* scroll hint (right side of entry) */
+.hint{
+  position:absolute;right:44px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  pointer-events:none;opacity:0;animation:efup 1s 1.3s ease forwards;
+}
+.hint span{font-family:var(--fk);font-size:8px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.2);writing-mode:vertical-rl}
+.hint-line{width:1px;height:40px;background:linear-gradient(to bottom,rgba(255,92,26,.6),transparent);animation:hpulse 2s ease-in-out infinite}
+@keyframes hpulse{0%,100%{opacity:.2;transform:scaleY(.5);transform-origin:top}50%{opacity:1;transform:scaleY(1)}}
+
+/* ══════ PANEL 0: ENTRY ══════ */
+#entry{background:#000}
+#entry canvas{position:absolute;inset:0;width:100%!important;height:100%!important;pointer-events:none}
+#entry-ui{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.e-logo{font-family:var(--fd);font-weight:800;font-size:clamp(56px,8vw,120px);letter-spacing:-.05em;color:#000;line-height:1;opacity:0;animation:efup 1.2s .4s ease forwards}
+.e-logo span{color:#000}
+.e-sub{font-family:var(--fk);font-size:12px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.32);margin-top:16px;opacity:0;animation:efup 1.2s .7s ease forwards}
+.e-brand{font-family:var(--fd);font-weight:800;font-size:clamp(14px,2vw,22px);letter-spacing:-.03em;color:var(--w);margin-top:12px;opacity:0;animation:efup 1.2s 1s ease forwards}
+@keyframes efup{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+/* corners */
+.cm{position:absolute;width:18px;height:18px;z-index:6;pointer-events:none}
+.cm::before,.cm::after{content:'';position:absolute;background:rgba(255,255,255,.14)}
+.cm::before{width:1px;height:100%}.cm::after{width:100%;height:1px}
+.cm.tl{top:26px;left:26px}.cm.tl::before,.cm.tl::after{top:0;left:0}
+.cm.tr{top:26px;right:26px}.cm.tr::before{top:0;right:0}.cm.tr::after{top:0;right:0}
+.cm.bl{bottom:26px;left:26px}.cm.bl::before{bottom:0;left:0}.cm.bl::after{bottom:0;left:0}
+.cm.br{bottom:26px;right:26px}.cm.br::before{bottom:0;right:0}.cm.br::after{bottom:0;right:0}
+/* strips */
+.dstrip{position:absolute;z-index:6;pointer-events:none;font-family:var(--fd);font-size:9px;letter-spacing:.14em;color:rgba(255,255,255,.07);text-transform:uppercase;white-space:nowrap}
+.dstrip.l{left:26px;top:50%;transform:translateY(-50%) rotate(-90deg)}
+.dstrip.r{right:26px;top:50%;transform:translateY(-50%) rotate(90deg)}
+
+/* ticker — fixed bottom */
+#ticker-bar{position:fixed;bottom:0;left:0;right:0;z-index:150;border-top:1px solid var(--border);overflow:hidden;padding:9px 0;background:rgba(8,8,8,.92);backdrop-filter:blur(8px)}
+.tt{display:flex;animation:tk 25s linear infinite;white-space:nowrap;will-change:transform;animation-play-state:running}
+.ti{display:inline-flex;align-items:center;gap:24px;padding:0 28px;font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--wm);flex-shrink:0}
+.ts{color:var(--a);font-size:7px}
+@keyframes tk{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ══════ PANEL 1: HERO ══════ */
+#hero{background:#000;flex-direction:column;text-align:center}
+.gbg{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);background-size:72px 72px;mask-image:radial-gradient(ellipse 80% 70% at 50% 0%,black 20%,transparent 100%);-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 0%,black 20%,transparent 100%)}
+.hdots{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,rgba(255,92,26,.2) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(ellipse 55% 55% at 50% 50%,black,transparent);-webkit-mask-image:radial-gradient(ellipse 55% 55% at 50% 50%,black,transparent);animation:dp 6s ease-in-out infinite alternate}
+@keyframes dp{from{opacity:.12}to{opacity:.32}}
+.hglow{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(255,92,26,.06) 0%,transparent 65%);pointer-events:none}
+.dl{position:absolute;height:1px;background:linear-gradient(90deg,transparent,var(--a),transparent);opacity:0;animation:dl 7s infinite}
+.dl:nth-child(3){top:22%;width:52%;left:24%}.dl:nth-child(4){top:42%;width:36%;left:10%;animation-delay:1.8s}.dl:nth-child(5){top:60%;width:62%;left:18%;animation-delay:3.6s}.dl:nth-child(6){top:76%;width:44%;left:28%;animation-delay:5.4s}
+@keyframes dl{0%{opacity:0;transform:scaleX(0);transform-origin:left}25%{opacity:.3;transform:scaleX(1)}65%{opacity:.3;transform:scaleX(1)}100%{opacity:0;transform:scaleX(0);transform-origin:right}}
+.hero-body{position:relative;z-index:1;padding:clamp(56px,8vh,80px) clamp(20px,4vw,40px) 0;max-width:760px}
+.hbadge{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(255,92,26,.25);border-radius:100px;padding:clamp(3px,0.5vh,5px) 14px;font-size:clamp(8px,1.1vh,10px);font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--wd);margin-bottom:clamp(12px,2.5vh,26px);background:rgba(255,92,26,.06)}
+.bd{width:5px;height:5px;border-radius:50%;background:var(--a);animation:bk 2s infinite}
+@keyframes bk{0%,100%{opacity:1}50%{opacity:.15}}
+.hh{font-family:var(--fd);font-weight:800;font-size:clamp(28px,5vh,80px);line-height:.97;letter-spacing:-.045em;margin-bottom:clamp(10px,2vh,20px)}
+.aw{color:var(--a)}
+.hs{font-size:clamp(11px,1.5vh,15px);color:var(--wd);max-width:400px;margin:0 auto clamp(16px,3vh,32px);line-height:1.6;font-family:var(--fk)}
+.ha{display:flex;gap:11px;justify-content:center;flex-wrap:wrap;margin-bottom:clamp(16px,3vh,36px)}
+.btn-p{display:inline-flex;align-items:center;gap:8px;background:var(--a);color:#000;font-family:var(--fb);font-size:clamp(10px,1.3vh,12px);font-weight:600;letter-spacing:.05em;padding:clamp(7px,1.2vh,11px) 22px;border-radius:2px;transition:background .2s,transform .15s;cursor:pointer;border:none;user-select:none}
+.btn-p:hover{background:var(--ab);transform:translateY(-1px)}
+.btn-s{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--wd);font-family:var(--fb);font-size:clamp(10px,1.3vh,12px);font-weight:500;letter-spacing:.05em;padding:clamp(7px,1.2vh,11px) 22px;border-radius:2px;border:1px solid var(--border-l);transition:color .2s,border-color .2s;cursor:pointer;user-select:none}
+.btn-s:hover{color:var(--w);border-color:rgba(255,255,255,.26)}
+.hstats{display:flex;gap:44px;justify-content:center}
+.stn{font-family:var(--fd);font-size:clamp(18px,3vh,26px);font-weight:700;letter-spacing:-.04em;line-height:1}
+.stu{color:var(--a);font-size:15px}
+.stl{font-size:clamp(8px,1vh,10px);letter-spacing:.04em;color:var(--wm);margin-top:3px;font-family:var(--fk)}
+
+
+/* ══════ SHARED ══════ */
+.sl2{font-size:clamp(8px,1vh,10px);font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--a);margin-bottom:clamp(6px,1vh,12px)}
+.st{font-family:var(--fd);font-weight:700;font-size:clamp(18px,3.5vh,40px);letter-spacing:-.036em;line-height:1.05}
+.sd{font-size:clamp(11px,1.4vh,13px);color:var(--wd);line-height:1.6;font-family:var(--fk)}
+.si{position:relative;z-index:1;width:100%;max-width:1120px;padding:clamp(56px,8vh,80px) clamp(28px,5vw,72px) 0}
+.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.ics{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+/* reveal */
+.rv{opacity:0;transform:translateY(12px);transition:opacity .5s,transform .5s}
+.rv.on{opacity:1;transform:translateY(0)}
+
+/* ══════ PANEL 2: PROBLEM ══════ */
+#problem{background:#000}
+.prob-g{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,72px);align-items:center}
+.pdc{margin-top:clamp(10px,2vh,22px);padding:clamp(10px,1.5vh,16px) 18px;border:1px solid var(--border);border-left:2px solid var(--a);background:var(--surface);border-radius:2px}
+.pdv{font-family:var(--fd);font-size:clamp(24px,5vh,42px);font-weight:800;letter-spacing:-.045em;line-height:1}
+.pdv em{color:var(--a);font-style:normal}
+.pds{font-size:clamp(10px,1.3vh,12px);color:var(--wd);margin-top:5px;line-height:1.5;font-family:var(--fk)}
+.pi{padding:clamp(8px,1.5vh,15px) 0;border-bottom:1px solid var(--border)}
+.pi:first-child{border-top:1px solid var(--border)}
+.pin{font-size:9px;font-weight:700;letter-spacing:.18em;color:var(--a);margin-bottom:6px}
+.pit{font-family:var(--fd);font-size:clamp(12px,1.8vh,15px);font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+.pid{font-size:clamp(10px,1.3vh,12px);color:var(--wd);line-height:1.5;font-family:var(--fk)}
+
+/* ══════ PANEL 3: SOLUTION ══════ */
+#solution{background:var(--surface);flex-direction:column}
+.sol-h{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:clamp(12px,2.5vh,28px)}
+.sol-hr{font-size:12px;color:var(--wd);max-width:280px;line-height:1.72;font-family:var(--fk)}
+.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border)}
+.lc{background:var(--black);padding:clamp(12px,2vh,20px) clamp(12px,1.5vw,18px);position:relative;overflow:hidden}
+.lc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--a);transform:scaleX(0);transform-origin:left;transition:transform .35s}
+.lc:hover::after{transform:scaleX(1)}
+.li{margin-bottom:clamp(6px,1.2vh,11px)}
+.lt{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--a);margin-bottom:7px}
+.ltt{font-family:var(--fd);font-size:clamp(12px,1.8vh,15px);font-weight:700;letter-spacing:-.025em;margin-bottom:7px}
+.ld{font-size:clamp(10px,1.3vh,12px);color:var(--wd);line-height:1.5;font-family:var(--fk)}
+.ll{margin-top:9px;list-style:none;display:flex;flex-direction:column;gap:4px}
+.ll li{font-size:10px;color:var(--wm);padding-left:11px;position:relative;font-family:var(--fk)}
+.ll li::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:4px;height:1px;background:var(--a)}
+
+/* ══════ PANEL 4: FEATURES ══════ */
+#features{background:#000;flex-direction:column;justify-content:center}
+.feat-h{text-align:center;margin-bottom:clamp(8px,2vh,20px)}
+.feat-h .sd{margin:8px auto 0}
+.fg{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:1px;background:var(--border);width:100%}
+.fi{padding:clamp(16px,3vh,28px) clamp(16px,2.5vw,32px);background:var(--black);display:flex;gap:18px;align-items:flex-start;transition:background .25s}
+.fi.l{flex-direction:row-reverse;text-align:right}
+.fi.l .fig{display:inline-block}
+.fi:hover{background:rgba(255,92,26,.03)}
+.fii{flex-shrink:0;width:32px;height:32px;background:var(--ad);border:1px solid rgba(255,92,26,.2);border-radius:3px;display:flex;align-items:center;justify-content:center}
+.fit{font-family:var(--fd);font-size:clamp(11px,1.5vh,13px);font-weight:700;letter-spacing:-.02em;margin-bottom:clamp(3px,0.6vh,6px)}
+.fid{font-size:clamp(9px,1.2vh,11px);color:var(--wd);line-height:1.5;font-family:var(--fk)}
+.fig{display:inline-block;margin-top:6px;font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--a);border:1px solid rgba(255,92,26,.22);padding:2px 6px;border-radius:2px}
+
+/* ══════ PANEL 5: ARCH ══════ */
+#arch{background:var(--surface);flex-direction:column}
+.arch-h{text-align:center;margin-bottom:clamp(14px,3vh,32px)}
+.arch-h .sd{margin:8px auto 0}
+.af{display:flex;align-items:center;justify-content:center;margin-bottom:clamp(10px,2vh,18px)}
+.as{flex:1;max-width:185px;display:flex;flex-direction:column;align-items:center;text-align:center}
+.asb{width:100%;padding:clamp(10px,1.8vh,16px) 10px;background:var(--black);border:1px solid var(--border);border-radius:3px;position:relative;transition:border-color .25s}
+.as:hover .asb{border-color:rgba(255,92,26,.35)}
+.asn{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--a);color:#000;font-size:9px;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd)}
+.asi{margin-bottom:7px;color:var(--a);display:flex;justify-content:center}
+.ast{font-family:var(--fd);font-size:clamp(9px,1.1vh,10px);font-weight:700;margin-bottom:3px}
+.asd{font-size:9px;color:var(--wm);line-height:1.5;font-family:var(--fk)}
+.aar{padding:0 5px;color:var(--wm);flex-shrink:0;margin-top:-12px}
+.ao{padding:clamp(10px,1.5vh,16px) clamp(14px,2vw,24px);background:rgba(255,92,26,.06);border:1px solid rgba(255,92,26,.2);border-radius:3px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.aol{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--a);margin-bottom:3px}
+.aot{font-family:var(--fd);font-size:clamp(12px,1.8vh,15px);font-weight:700;letter-spacing:-.03em}
+.aop{display:flex;gap:6px;flex-wrap:wrap}
+.aopp{font-size:9px;font-weight:500;padding:3px 9px;border:1px solid rgba(255,92,26,.25);border-radius:100px;color:var(--ab);background:rgba(255,92,26,.07)}
+
+/* ══════ PANEL 6: CTA ══════ */
+#cta{background:#000;flex-direction:column;text-align:center}
+.cg{position:absolute;bottom:-180px;left:50%;transform:translateX(-50%);width:700px;height:600px;background:radial-gradient(circle at 50% 100%,rgba(255,92,26,.1),transparent 60%);pointer-events:none}
+.cl{font-size:clamp(8px,1vh,10px);font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--a);margin-bottom:clamp(8px,1.5vh,16px)}
+.ch{font-family:var(--fd);font-weight:800;font-size:clamp(28px,6vh,68px);letter-spacing:-.044em;line-height:.97;margin-bottom:clamp(8px,1.5vh,16px)}
+.cs{font-size:clamp(11px,1.4vh,13px);color:var(--a);max-width:340px;margin:0 auto clamp(14px,2.5vh,30px);line-height:1.6;font-family:var(--fk)}
+.cn{font-size:clamp(9px,1.1vh,11px);color:var(--wm);letter-spacing:.02em;font-family:var(--fk);margin-bottom:clamp(10px,2vh,20px)}
+
+/* ══════ PANEL 7: BRIEF ══════ */
+#brief{background:var(--surface);overflow:hidden;flex-direction:column;justify-content:center}
+.brief-inner{width:100%;max-width:640px;padding:clamp(10px,6vh,60px) 68px clamp(10px,7vh,80px);margin:0 auto}
+.brief-hd{margin-bottom:clamp(8px,2vh,20px)}
+.brief-hd .sd{margin:clamp(4px,0.6vh,8px) 0 0;font-size:clamp(11px,1.3vh,13px)}
+.bform{display:flex;flex-direction:column;gap:clamp(6px,1.2vh,12px)}
+.bf-row{display:flex;flex-direction:column;gap:clamp(3px,0.5vh,5px)}
+.bf-label{font-size:clamp(10px,1.2vh,12px);font-weight:700;font-family:var(--fk);color:var(--w)}
+.req{color:var(--a)}
+.bf-input{width:100%;background:#111;border:1px solid var(--border-l);border-radius:3px;padding:clamp(6px,1vh,10px) 13px;font-size:clamp(10px,1.2vh,12px);color:var(--w);font-family:var(--fk);outline:none;transition:border-color .2s}
+.bf-input:focus{border-color:var(--a)}
+.bf-input::placeholder{color:var(--wm)}
+.tag-wrap{min-height:clamp(28px,4vh,40px);background:#111;border:1px solid var(--border-l);border-radius:3px;padding:clamp(4px,0.7vh,7px) 10px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;transition:border-color .2s;cursor:text}
+.tag-wrap:focus-within{border-color:var(--a)}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{display:inline-flex;align-items:center;gap:4px;background:rgba(255,92,26,.12);border:1px solid rgba(255,92,26,.3);color:var(--ab);font-size:10px;font-weight:700;font-family:var(--fk);padding:3px 8px;border-radius:100px}
+.tag-del{cursor:pointer;font-size:12px;line-height:1;color:rgba(255,92,26,.6);transition:color .15s}
+.tag-del:hover{color:var(--a)}
+.tag-input{background:transparent;border:none;outline:none;color:var(--w);font-size:12px;font-family:var(--fk);min-width:110px;flex:1}
+.tag-input::placeholder{color:var(--wm)}
+.bf-submit{margin-top:clamp(4px,0.8vh,8px);width:100%;padding:clamp(8px,1.2vh,12px);background:var(--a);color:#000;font-size:clamp(11px,1.3vh,13px);font-weight:800;font-family:var(--fk);border:none;border-radius:3px;cursor:pointer;transition:background .2s;letter-spacing:.04em}
+.bf-submit:hover{background:var(--ab)}
+.brief-result{display:none}
+.brief-result.on{display:block}
+.br-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.br-reset{font-size:10px;font-weight:700;font-family:var(--fk);color:var(--wm);background:transparent;border:1px solid var(--border-l);padding:5px 10px;border-radius:2px;cursor:pointer;transition:all .2s}
+.br-reset:hover{color:var(--w);border-color:rgba(255,255,255,.3)}
+.br-body{display:flex;flex-direction:column;gap:1px;background:var(--border)}
+.br-row{background:var(--black);padding:11px 15px;display:flex;gap:14px;align-items:flex-start}
+.br-key{font-size:9px;font-weight:800;font-family:var(--fk);color:var(--a);letter-spacing:.12em;text-transform:uppercase;min-width:74px;padding-top:2px}
+.brief-copy{position:absolute;bottom:52px;right:68px;font-size:9px;color:rgba(255,255,255,.18);letter-spacing:.06em;font-family:var(--fk)}
+.br-val{font-size:11px;font-family:var(--fk);color:var(--w);line-height:1.65;display:flex;flex-wrap:wrap;gap:4px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <span class="nl" data-p="0">OTB<span>.</span></span>
+  <ul class="nv">
+    <li><a data-p="1">Hero</a></li>
+    <li><a data-p="2">Problem</a></li>
+    <li><a data-p="3">Solution</a></li>
+    <li><a data-p="4">Features</a></li>
+    <li><a data-p="5">System</a></li>
+  </ul>
+  <span class="nc" data-p="7">Request Demo</span>
+</nav>
+
+<!-- DOTS -->
+<div id="prog">
+  <div class="pdot" data-i="0"></div>
+  <div class="pdot" data-i="1"></div>
+  <div class="pdot" data-i="2"></div>
+  <div class="pdot" data-i="3"></div>
+  <div class="pdot" data-i="4"></div>
+  <div class="pdot" data-i="5"></div>
+  <div class="pdot" data-i="6"></div>
+  <div class="pdot" data-i="7"></div>
+</div>
+
+<!-- TICKER -->
+<div id="ticker-bar">
+  <div class="tt">
+    <span class="ti">DataOps Layer <span class="ts">◆</span></span><span class="ti">ResearchOps Automation <span class="ts">◆</span></span><span class="ti">AI Pattern Analysis <span class="ts">◆</span></span><span class="ti">IA Validation <span class="ts">◆</span></span><span class="ti">Design Intelligence <span class="ts">◆</span></span><span class="ti">Strategic Output <span class="ts">◆</span></span><span class="ti">UX Pattern Library <span class="ts">◆</span></span><span class="ti">Competitive Benchmarking <span class="ts">◆</span></span>
+    <span class="ti">DataOps Layer <span class="ts">◆</span></span><span class="ti">ResearchOps Automation <span class="ts">◆</span></span><span class="ti">AI Pattern Analysis <span class="ts">◆</span></span><span class="ti">IA Validation <span class="ts">◆</span></span><span class="ti">Design Intelligence <span class="ts">◆</span></span><span class="ti">Strategic Output <span class="ts">◆</span></span><span class="ti">UX Pattern Library <span class="ts">◆</span></span><span class="ti">Competitive Benchmarking <span class="ts">◆</span></span>
+  </div>
+</div>
+
+<!-- TRACK -->
+<div id="track">
+
+  <!-- 0: ENTRY -->
+  <div class="panel" id="entry">
+    <div class="cm tl"></div><div class="cm tr"></div>
+    <div class="cm bl"></div><div class="cm br"></div>
+    <div class="dstrip l">ResearchOps · DataOps · DesignOps</div>
+    <div class="dstrip r">Strategic Output · Pattern Analysis · AI</div>
+    <div id="entry-ui">
+      <div class="e-logo">OTB<span>.</span></div>
+      <div class="e-brand">Open to Better.</div>
+    </div>
+    <div class="hint">
+      <span>Scroll</span>
+      <div class="hint-line"></div>
+    </div>
+  </div>
+
+  <!-- 1: HERO -->
+  <div class="panel" id="hero">
+    <div class="gbg"></div><div class="hdots"></div>
+    <div class="dl"></div><div class="dl"></div><div class="dl"></div><div class="dl"></div>
+    <div class="hglow"></div>
+    <div class="hero-body">
+      <div class="hbadge"><span class="bd"></span>ResearchOps + DesignOps Intelligence</div>
+      <h1 class="hh">Design Intelligence,<br>Powered by <span class="aw">Data.</span></h1>
+      <p class="hs">파편화된 리서치를 전략적 의사결정으로 전환하세요.<br>스케일 있게 운영되는 에이전시를 위해 설계되었습니다.</p>
+      <div class="ha">
+        <span class="btn-p" data-brief="true">Request Demo <svg class="ics" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+        <span class="btn-s" data-p="4">Explore Platform</span>
+      </div>
+      <div class="hstats">
+        <div><div class="stn">12–18<span class="stu">h</span></div><div class="stl">프로젝트당 절감 시간</div></div>
+        <div style="width:1px;background:var(--border)"></div>
+        <div><div class="stn">3<span class="stu">x</span></div><div class="stl">더 빠른 인사이트 도출</div></div>
+      </div>
+    </div>
+    <span class="pcnt">01 / 07</span>
+  </div>
+
+  <!-- 2: PROBLEM -->
+  <div class="panel" id="problem">
+    <span class="pcnt">02 / 07</span>
+    <div class="si">
+      <div class="prob-g">
+        <div>
+          <div class="sl2">The Problem</div>
+          <h2 class="st" style="margin-bottom:13px">Research that<br>never scales.</h2>
+          <p class="sd" style="max-width:330px">에이전시는 동일한 리서치 사이클을 반복하고, 같은 패턴 라이브러리를 다시 만들며, 지식 자산을 잃습니다.</p>
+          <div class="pdc"><div class="pdv">12<em>–</em>18h</div><div class="pds">반복적인 리서치와 패턴 재정리에 프로젝트마다 낭비되는 시간.</div></div>
+        </div>
+        <div>
+          <div class="pi rv"><div class="pin">01</div><div class="pit">Fragmented Research</div><div class="pid">인사이트가 Notion, Figma, Slack에 분산되어 있습니다.</div></div>
+          <div class="pi rv"><div class="pin">02</div><div class="pit">No UX Pattern Memory</div><div class="pid">모든 프로젝트는 처음부터 다시 시작됩니다.</div></div>
+          <div class="pi rv"><div class="pin">03</div><div class="pit">Strategy Without Signal</div><div class="pid">디자인 의사결정이 데이터가 아닌 직관에 의존합니다.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3: SOLUTION -->
+  <div class="panel" id="solution">
+    <span class="pcnt">03 / 07</span>
+    <div class="si">
+      <div class="sol-h">
+        <div><div class="sl2">The Platform</div><h2 class="st">Three layers.<br>One system.</h2></div>
+        <p class="sol-hr">OTB는 디자인 인텔리전스를 통합된 운영 시스템으로 구조화합니다.</p>
+      </div>
+      <div class="sg">
+        <div class="lc rv"><div class="li"><svg style="width:20px;height:20px;stroke:var(--a);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg></div><div class="lt">Layer 01</div><div class="ltt">DataOps Layer</div><div class="ld">도구와 프로젝트에서 디자인 신호를 자동 수집합니다.</div><ul class="ll"><li>다중 소스 데이터 수집</li><li>패턴 자동 태깅</li><li>프로젝트 간 인덱싱</li></ul></div>
+        <div class="lc rv"><div class="li"><svg style="width:20px;height:20px;stroke:var(--a);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div><div class="lt">Layer 02</div><div class="ltt">ResearchOps Layer</div><div class="ld">리서치를 AI 인사이트 레포지토리로 구조화합니다.</div><ul class="ll"><li>합성 자동화 엔진</li><li>시맨틱 검색</li><li>경쟁사 벤치마크</li></ul></div>
+        <div class="lc rv"><div class="li"><svg style="width:20px;height:20px;stroke:var(--a);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg></div><div class="lt">Layer 03</div><div class="ltt">DesignOps Layer</div><div class="ld">인사이트를 의사결정 프레임워크로 변환합니다.</div><ul class="ll"><li>전략 추천 엔진</li><li>IA + 플로우 검증</li><li>팀 간 지식 동기화</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4: FEATURES -->
+  <div class="panel" id="features">
+    <span class="pcnt">04 / 07</span>
+    <div class="si">
+      <div class="feat-h"><div class="sl2">Capabilities</div><h2 class="st">Precision tools for<br>design-led organizations.</h2><p class="sd">각 모듈은 에이전시 워크플로우의 병목 지점을 해결합니다.</p></div>
+      <div class="fg">
+        <div class="fi l rv"><div class="fii"><svg class="ic" style="color:var(--a)" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg></div><div><div class="fit">Smart Reference Recommendation</div><div class="fid">브리프에 맞춰 UX 패턴을 자동 제안합니다.</div><span class="fig">AI-Powered</span></div></div>
+        <div class="fi rv"><div class="fii"><svg class="ic" style="color:var(--a)" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="fit">Performance-Based Strategy</div><div class="fid">정량적 성과 신호 기반 전략을 제공합니다.</div><span class="fig">Data-Driven</span></div></div>
+        <div class="fi l rv"><div class="fii"><svg class="ic" style="color:var(--a)" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div><div><div class="fit">Automated IA &amp; Flow Validation</div><div class="fid">정보 구조와 플로우를 자동 검증합니다.</div><span class="fig">Validation Engine</span></div></div>
+        <div class="fi rv"><div class="fii"><svg class="ic" style="color:var(--a)" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div><div><div class="fit">Industry Insight Dashboard</div><div class="fid">트렌드와 경쟁사 신호를 실시간 추적합니다.</div><span class="fig">Live Intelligence</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5: ARCH -->
+  <div class="panel" id="arch">
+    <span class="pcnt">05 / 07</span>
+    <div class="si">
+      <div class="arch-h"><div class="sl2">System Architecture</div><h2 class="st">From raw data to<br>strategic output.</h2><p class="sd">단일 파이프라인이 디자인 신호를 지식으로 전환합니다.</p></div>
+      <div class="af">
+        <div class="as rv"><div class="asb"><div class="asn">1</div><div class="asi"><svg style="width:18px;height:18px;stroke:var(--a);fill:none;stroke-width:1.4;stroke-linecap:round" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div><div class="ast">Data Collection</div><div class="asd">다중 소스 수집</div></div></div>
+        <div class="aar"><svg style="width:12px;height:12px;stroke:var(--wm);fill:none;stroke-width:1.5;stroke-linecap:round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        <div class="as rv"><div class="asb"><div class="asn">2</div><div class="asi"><svg style="width:18px;height:18px;stroke:var(--a);fill:none;stroke-width:1.4;stroke-linecap:round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div><div class="ast">AI Structuring</div><div class="asd">시맨틱 태깅 자동화</div></div></div>
+        <div class="aar"><svg style="width:12px;height:12px;stroke:var(--wm);fill:none;stroke-width:1.5;stroke-linecap:round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        <div class="as rv"><div class="asb"><div class="asn">3</div><div class="asi"><svg style="width:18px;height:18px;stroke:var(--a);fill:none;stroke-width:1.4;stroke-linecap:round" viewBox="0 0 24 24"><path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 4v16"/></svg></div><div class="ast">Pattern Analysis</div><div class="asd">인텔리전스 합성</div></div></div>
+        <div class="aar"><svg style="width:12px;height:12px;stroke:var(--wm);fill:none;stroke-width:1.5;stroke-linecap:round" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        <div class="as rv"><div class="asb"><div class="asn">4</div><div class="asi"><svg style="width:18px;height:18px;stroke:var(--a);fill:none;stroke-width:1.4;stroke-linecap:round" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div class="ast">Strategic Output</div><div class="asd">검증된 전략 권고안</div></div></div>
+      </div>
+      <div class="ao rv"><div><div class="aol">Output Layer</div><div class="aot">Decisions backed by design data.</div></div><div class="aop"><span class="aopp">UX Pattern Library</span><span class="aopp">Strategy Briefs</span><span class="aopp">IA Validation Reports</span><span class="aopp">Insight Dashboard</span><span class="aopp">Competitive Benchmarks</span></div></div>
+    </div>
+  </div>
+
+  <!-- 6: CTA -->
+  <div class="panel" id="cta">
+    <span class="pcnt">06 / 07</span>
+    <div class="cg"></div>
+    <div style="position:relative;z-index:1;text-align:center">
+      <div class="cl">Open To Better</div>
+      <h2 class="ch">Build Better<br>with Data.</h2>
+      <div class="cn">디자인 디렉터, 크리에이티브 에이전시 &amp; 프로덕트 스튜디오를 위해 설계되었습니다.</div>
+      <p class="cs">OTB는 디자인 팀이 생각하고, 결정하고, 실행하는 방식을 혁신합니다.</p>
+    </div>
+  </div>
+
+  <!-- 7: BRIEF -->
+  <div class="panel" id="brief">
+    <span class="pcnt">07 / 07</span>
+    <div class="brief-inner">
+      <div class="brief-hd"><div class="sl2">Design Brief</div><h2 class="st">DESIGN PROJECT</h2><p class="sd">프로젝트 정보를 입력하면 OTB가 맞춤 리서치 전략을 제안합니다.</p></div>
+      <div class="bform" id="briefForm">
+        <div class="bf-row"><label class="bf-label">프로젝트명 <span class="req">*</span></label><input class="bf-input" type="text" placeholder="프로젝트 이름" id="bf-name"></div>
+        <div class="bf-row"><label class="bf-label">업종 <span class="req">*</span></label><div class="tag-wrap"><div class="tags" id="tags-industry"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="industry"></div></div>
+        <div class="bf-row"><label class="bf-label">목표 <span class="req">*</span></label><div class="tag-wrap"><div class="tags" id="tags-goal"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="goal"></div></div>
+        <div class="bf-row"><label class="bf-label">타깃 고객층 <span class="req">*</span></label><div class="tag-wrap"><div class="tags" id="tags-target"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="target"></div></div>
+        <div class="bf-row"><label class="bf-label">채널 <span class="req">*</span></label><div class="tag-wrap"><div class="tags" id="tags-channel"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="channel"></div></div>
+        <div class="bf-row"><label class="bf-label">요구사항 <span class="req">*</span></label><div class="tag-wrap"><div class="tags" id="tags-req"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="req"></div></div>
+        <div class="bf-row"><label class="bf-label">경쟁사 링크</label><div class="tag-wrap"><div class="tags" id="tags-comp"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="comp"></div></div>
+        <button class="bf-submit" onclick="submitBrief()">확인</button>
+      </div>
+      <div class="brief-result" id="briefResult">
+        <div class="br-head"><div class="sl2">Brief Summary</div><button class="br-reset" onclick="resetBrief()">다시 작성</button></div>
+        <div class="br-body" id="brBody"></div>
+      </div>
+    </div>
+    <div class="brief-copy">@All rights reserved by Open to Better.</div>
+  </div>
+
+</div><!-- /track -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── THREE.JS (panel 0) ────────────────────────────────
+const entryEl=document.getElementById('entry');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setClearColor(0x000000,1);
+entryEl.appendChild(renderer.domElement);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(55,window.innerWidth/window.innerHeight,0.1,1000);
+camera.position.z=8;
+
+const C=5000,pGeo=new THREE.BufferGeometry(),
+  pPos=new Float32Array(C*3),pSz=new Float32Array(C),pPhase=new Float32Array(C);
+for(let i=0;i<C;i++){
+  const t=Math.random()*Math.PI*2,p=Math.acos(2*Math.random()-1);
+  const r=1.0+Math.random()*.35;
+  pPos[i*3]=r*Math.sin(p)*Math.cos(t);
+  pPos[i*3+1]=r*Math.sin(p)*Math.sin(t);
+  pPos[i*3+2]=r*Math.cos(p);
+  pSz[i]=Math.random()*5+2;
+  pPhase[i]=Math.random()*Math.PI*2;
+}
+pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+pGeo.setAttribute('size',new THREE.BufferAttribute(pSz,1));
+pGeo.setAttribute('aPhase',new THREE.BufferAttribute(pPhase,1));
+
+const mat=new THREE.ShaderMaterial({
+  uniforms:{uTime:{value:0},uMouse:{value:new THREE.Vector2()}},
+  vertexShader:`
+    attribute float size;
+    attribute float aPhase;
+    varying vec3 vColor;
+    uniform float uTime;
+    uniform vec2 uMouse;
+    float hash(vec3 p){p=fract(p*vec3(443.897,397.297,491.187));p+=dot(p.zxy,p.yxz+19.19);return fract(p.x*p.y*p.z);}
+    float noise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(hash(i),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z);}
+    float fbm(vec3 p){float v=0.;float a=.5;for(int i=0;i<4;i++){v+=a*noise(p);p*=2.;a*=.5;}return v;}
+    void main(){
+      vec3 n=normalize(position);
+      float disp=fbm(n*2.2+uTime*.18)*.35+fbm(n*4.+uTime*.12)*.15;
+      disp+=sin(uTime*.6+aPhase)*.06;
+      vec3 p=position+n*disp;
+      vec2 m=uMouse;
+      float d=length(p.xy-m*3.5);
+      if(d<4.0){float f=smoothstep(4.0,0.,d);p.xy+=normalize(p.xy-m*3.5)*f*.7;p.z+=f*.25;}
+      float t=clamp(disp*1.8,0.,1.);
+      vec3 c1=vec3(1.,.36,.1);vec3 c2=vec3(1.,.57,.22);vec3 c3=vec3(.95,.95,.93);
+      vColor=t<.6?mix(c1,c2,t/.6):mix(c2,c3,(t-.6)/.4);
+      vec4 mv=modelViewMatrix*vec4(p,1.0);
+      gl_PointSize=size*(220.0/-mv.z);
+      gl_Position=projectionMatrix*mv;
+    }
+  `,
+  fragmentShader:`
+    varying vec3 vColor;
+    void main(){
+      vec2 uv=gl_PointCoord-.5;
+      float d=length(uv);
+      if(d>.5)discard;
+      float a=exp(-d*d*12.)*1.2;
+      a=clamp(a,0.,1.);
+      gl_FragColor=vec4(vColor,a*.75);
+    }
+  `,
+  transparent:true,depthWrite:false
+});
+const pts=new THREE.Points(pGeo,mat);scene.add(pts);
+
+scene.add(new THREE.Mesh(
+  new THREE.SphereGeometry(1.72,12,7),
+  new THREE.MeshBasicMaterial({color:0xff5c1a,wireframe:true,transparent:true,opacity:.1})
+));
+const ring=new THREE.Mesh(new THREE.TorusGeometry(1.65,.002,2,180),new THREE.MeshBasicMaterial({color:0xff5c1a,transparent:true,opacity:.25}));
+ring.rotation.x=Math.PI*.5;scene.add(ring);
+const ring2=new THREE.Mesh(new THREE.TorusGeometry(2.1,.0012,2,180),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.05}));
+ring2.rotation.x=Math.PI*.3;ring2.rotation.y=Math.PI*.2;scene.add(ring2);
+
+const mv=new THREE.Vector2(),tr=new THREE.Vector2(),cr=new THREE.Vector2();
+const smoothMouse=new THREE.Vector2(),targetMouse=new THREE.Vector2();
+document.addEventListener('mousemove',e=>{
+  mv.x=(e.clientX/window.innerWidth)*2-1;mv.y=-((e.clientY/window.innerHeight)*2-1);
+  targetMouse.set(mv.x,mv.y);tr.x=mv.y*.55;tr.y=mv.x*.55;
+});
+const clk=new THREE.Clock();
+let threeActive=true;
+new IntersectionObserver(e=>{threeActive=e[0].isIntersecting;},{threshold:.01}).observe(entryEl);
+(function loop(){
+  requestAnimationFrame(loop);if(!threeActive)return;
+  const t=clk.getElapsedTime();mat.uniforms.uTime.value=t;
+  smoothMouse.x+=(targetMouse.x-smoothMouse.x)*.04;
+  smoothMouse.y+=(targetMouse.y-smoothMouse.y)*.04;
+  mat.uniforms.uMouse.value.copy(smoothMouse);
+  cr.x+=(tr.x-cr.x)*.012;cr.y+=(tr.y-cr.y)*.012;
+  pts.rotation.x=cr.x+t*.05;pts.rotation.y=cr.y+t*.07;
+  scene.children[1].rotation.y=t*.1;scene.children[1].rotation.x=t*.06;
+  ring.rotation.z=t*.07;ring2.rotation.z=-t*.04;ring2.rotation.x=Math.PI*.3+Math.sin(t*.3)*.08;
+  renderer.render(scene,camera);
+})();
+
+// ── RESIZE ────────────────────────────────────────────
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+
+// ─── HORIZONTAL SCROLL ENGINE (wheel lerp) ─────────────
+const track  = document.getElementById('track');
+const navEl  = document.getElementById('nav');
+const panels = [...document.querySelectorAll('.panel')];
+const N      = panels.length;
+
+const revealed = new Set([0]);
+let targetTX = 0;
+let currentTX = 0;
+const maxTX = () => (N - 1) * window.innerWidth;
+
+function setup(){
+  track.style.width = (N * window.innerWidth) + 'px';
+}
+
+function lerp(a, b, t){ return a + (b - a) * t; }
+
+function tick(){
+  currentTX = lerp(currentTX, targetTX, 0.08);
+  if(Math.abs(currentTX - targetTX) < 0.5) currentTX = targetTX;
+  track.style.transform = `translateX(-${currentTX}px)`;
+
+  // active panel index
+  const idx = Math.round(currentTX / window.innerWidth);
+  const past0 = idx > 0;
+  navEl.classList.toggle('vis', past0);
+  navEl.classList.toggle('sc', past0);
+  document.querySelectorAll('.nv a').forEach(a => a.classList.toggle('act', parseInt(a.dataset.p) === idx));
+  // dots
+  const progEl = document.getElementById('prog');
+  if(progEl){
+    progEl.classList.toggle('vis', past0);
+    document.querySelectorAll('.pdot').forEach((d,i) => d.classList.toggle('act', i === idx));
+  }
+  triggerReveal(idx);
+  if(idx < N-1) triggerReveal(idx+1);
+
+  requestAnimationFrame(tick);
+}
+
+function triggerReveal(idx){
+  if(idx < 0 || idx >= N) return;
+  if(revealed.has(idx)) return;
+  revealed.add(idx);
+  panels[idx].querySelectorAll('.rv').forEach((el,i) => {
+    setTimeout(() => el.classList.add('on'), i * 90);
+  });
+}
+
+function goTo(idx){
+  idx = Math.max(0, Math.min(N-1, idx));
+  targetTX = idx * window.innerWidth;
+}
+
+setup();
+triggerReveal(0);
+requestAnimationFrame(tick);
+
+// wheel → smooth horizontal
+let wheelBuf = 0;
+let wheelTimer = null;
+window.addEventListener('wheel', e => {
+  e.preventDefault();
+  wheelBuf += e.deltaY + e.deltaX;
+  clearTimeout(wheelTimer);
+  wheelTimer = setTimeout(() => { wheelBuf = 0; }, 50);
+  targetTX = Math.max(0, Math.min(maxTX(), targetTX + e.deltaY * 1.2));
+}, { passive: false });
+
+// touch
+let tx0 = null;
+window.addEventListener('touchstart', e => { tx0 = e.touches[0].clientX; }, { passive: true });
+window.addEventListener('touchmove', e => {
+  if(tx0 === null) return;
+  const dx = tx0 - e.touches[0].clientX;
+  targetTX = Math.max(0, Math.min(maxTX(), targetTX + dx * 1.5));
+  tx0 = e.touches[0].clientX;
+}, { passive: true });
+
+// keyboard
+window.addEventListener('keydown', e => {
+  const cur = Math.round(currentTX / window.innerWidth);
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') goTo(cur+1);
+  if(e.key==='ArrowLeft' ||e.key==='ArrowUp')   goTo(cur-1);
+});
+
+// nav clicks
+document.querySelectorAll('[data-p]').forEach(el => {
+  el.addEventListener('click', () => {
+    const p = parseInt(el.dataset.p);
+    if(p === 7) { window.location.href = '/otb_demo.html'; }
+    else { goTo(p); }
+  });
+});
+
+// Hero Request Demo → go to Design Brief panel
+document.querySelectorAll('[data-brief]').forEach(el => {
+  el.addEventListener('click', () => goTo(7));
+});
+// dot clicks
+document.querySelectorAll('.pdot').forEach((d,i) => d.addEventListener('click', () => goTo(i)));
+
+// resize
+window.addEventListener('resize', () => {
+  setup();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  targetTX = Math.round(currentTX / (window.innerWidth || 1)) * window.innerWidth;
+});
+
+// ─── BRIEF FORM ───────────────────────────────────────
+const tagData={industry:[],goal:[],target:[],channel:[],req:[],comp:[]};
+document.querySelectorAll('.tag-input').forEach(inp=>{
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&inp.value.trim()){
+      e.preventDefault();const k=inp.dataset.target,v=inp.value.trim();
+      if(!tagData[k].includes(v)){tagData[k].push(v);renderTag(k,v);}inp.value='';
+    }
+    if(e.key==='Backspace'&&!inp.value&&tagData[inp.dataset.target].length){
+      const k=inp.dataset.target;tagData[k].pop();renderTags(k);
+    }
+  });
+  inp.closest('.tag-wrap').addEventListener('click',()=>inp.focus());
+});
+function renderTag(k,v){
+  const c=document.getElementById('tags-'+k),t=document.createElement('span');
+  t.className='tag';t.innerHTML=`${v}<span class="tag-del">×</span>`;
+  t.querySelector('.tag-del').addEventListener('click',()=>{tagData[k]=tagData[k].filter(x=>x!==v);renderTags(k);});
+  c.appendChild(t);
+}
+function renderTags(k){document.getElementById('tags-'+k).innerHTML='';tagData[k].forEach(v=>renderTag(k,v));}
+function submitBrief(){
+  const name=document.getElementById('bf-name').value.trim();
+  if(!name){document.getElementById('bf-name').focus();return;}
+  for(const r of ['industry','goal','target','channel','req']){if(!tagData[r].length){document.querySelector(`[data-target="${r}"]`).focus();return;}}
+  
+  // 브리프 저장 후 바로 demo로 이동
+  const briefData={
+    projectName: name,
+    industry: tagData.industry,
+    goal: tagData.goal,
+    target: tagData.target,
+    channel: tagData.channel,
+    constraints: tagData.req,
+    competitors: tagData.comp,
+    createdAt: new Date().toISOString()
+  };
+  try{ localStorage.setItem('otb_brief', JSON.stringify(briefData)); }catch(e){}
+  window.location.href = '/otb_demo.html';
+}
+function resetBrief(){
+  Object.keys(tagData).forEach(k=>{tagData[k]=[];renderTags(k);});
+  document.getElementById('bf-name').value='';
+  document.getElementById('briefForm').style.display='flex';
+  document.getElementById('briefResult').classList.remove('on');
+}
+</script>
+</body>
+</html>

@@ -315,13 +315,13 @@ def crawl_news(run_id: str, max_per_source: int = 20):
 # 2️⃣ Google Trends 수집 (INTENT)
 # =========================
 
-def crawl_google_trends(run_id: str):
+def crawl_google_trends(run_id: str):응
     pytrends = TrendReq(hl="en-US", tz=360)
 
     # Enhanced keywords
     keywords = [
         # 기존
-        "web design",
+        "web design",머
         "brand identity",
         "UX design",
         "AI design",
@@ -428,7 +428,7 @@ if __name__ == "__main__":
 # ```
 # RSS 소스: 30+ 개
 # - 디자인 종합: 7개
-# - UX/UI 전문: 6개 (민주님 논문 기반!)
+# - UX/UI 전문: 6개 
 # - 브랜딩: 3개
 # - 웹 디자인: 3개
 # - 모바일/앱: 2개

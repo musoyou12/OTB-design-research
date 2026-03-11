@@ -1,84 +1,156 @@
-#파이프라인 상태관리
+"""
+runDaily.py
+
+Module A 일일 파이프라인 엔트리포인트
+
+실행 순서:
+  1. RSS 수집 (rssCollector)
+  2. 텍스트 정제 (textCleaner)
+  3. 중복 제거 (deduplicate)
+  4. Supabase references 저장
+  5. 문서 청킹 (documentChunker)
+  6. 임베딩 생성 (textEmbedder)
+  7. reference_chunks 저장
+  8. 16축 스코어링 (axisScorer)
+  9. axis_scores 저장
+  10. 산업 패턴 누적 (industryPatternBuilder)
+  11. industry_patterns 저장
+  12. retrieval_logs 저장
+"""
+
 import os
+import sys
 import uuid
 import traceback
 from datetime import datetime
+from dotenv import load_dotenv
 
-from supabase import create_client
+# Windows 터미널 UTF-8 출력
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-# 파이프라인 모듈들
-from collectors.runCollectors import run_collectors
-from parsers.runParsers import run_parsers
-from analyzers.runAnalyzers import run_analyzers
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
+
+from moduleA.collectors.rssCollector import collect_rss
+from moduleA.collectors.googleTrendsCollector import collect_trends
+from moduleA.collectors.visualTrendCollector import collect_visual_trends
+from moduleA.chunker.documentChunker import chunk_items
+from moduleA.embedder.textEmbedder import embed_chunks
+from moduleA.scorer.axisScorer import score_items
+from moduleA.patterns.industryPatternBuilder import compute_industry_averages
+from moduleA.writers.supabaseWriter import (
+    create_run, mark_run_success, mark_run_failed,
+    upsert_references, insert_chunks, upsert_axis_scores,
+    upsert_industry_patterns, insert_retrieval_logs,
+    upsert_trend_signals, upsert_visual_trends,
+)
+
+# 기존 공통 유틸 재사용
+from common.utils.textCleaner import clean_item_text
+from moduleA.preprocess.deduplicate import deduplicate
+
+PIPELINE_VERSION = "v2.0.0"
 
 
-class DailyPipelineRunner:
-    def __init__(self):
-        # 환경 변수 로드
-        supabase_url = os.getenv("SUPABASE_URL")
-        supabase_key = os.getenv("SUPABASE_KEY")
+def run():
+    run_id = str(uuid.uuid4())
+    run_date = datetime.utcnow().date().isoformat()
 
-        if not supabase_url or not supabase_key:
-            raise RuntimeError("SUPABASE_URL or SUPABASE_KEY is not set")
+    print(f"\n{'='*50}")
+    print(f"[PIPELINE] run_id: {run_id}")
+    print(f"[PIPELINE] date:   {run_date}")
+    print(f"{'='*50}\n")
 
-        self.supabase = create_client(supabase_url, supabase_key)
+    create_run(run_id, run_date, PIPELINE_VERSION)
 
-        # 실행 컨텍스트
-        self.run_id = str(uuid.uuid4())
-        self.run_date = datetime.utcnow().date().isoformat()
-        self.pipeline_version = "v1.0.0"
+    stats = {
+        "collected": 0,
+        "after_dedup": 0,
+        "chunks": 0,
+        "embedded": 0,
+        "scored": 0,
+        "patterns": 0,
+    }
 
-    def run(self):
-        """
-        일일 파이프라인 엔트리 포인트
-        """
-        try:
-            self._create_run_record()
+    try:
+        # ── 1. 수집 ────────────────────────────────────
+        print("[STEP 1] 데이터 수집")
+        rss_items, logs = collect_rss(run_id)
+        trend_rows = collect_trends(run_id)
+        visual_rows = collect_visual_trends(run_id)
+        stats["collected"] = len(rss_items)
+        print(f"  → RSS: {len(rss_items)}, Trends: {len(trend_rows)}, Visual: {len(visual_rows)}")
 
-            # 1. 데이터 수집
-            run_collectors(self.run_id)
+        # ── 2. 트렌드 별도 저장 (테이블 분리) ───────────
+        print("[STEP 2] 트렌드 신호 저장")
+        upsert_trend_signals(trend_rows)
+        upsert_visual_trends(visual_rows)
 
-            # 2. 파싱 / 정규화
-            run_parsers(self.run_id)
+        # ── 3. RSS 정제 ────────────────────────────────
+        print("[STEP 3] 텍스트 정제")
+        items = [clean_item_text(item) for item in rss_items]
 
-            # 3. 분석 (Topic Modeling, RAG, LLM)
-            run_analyzers(self.run_id)
+        # ── 4. 중복 제거 ───────────────────────────────
+        print("[STEP 4] 중복 제거")
+        items = deduplicate(items)
+        stats["after_dedup"] = len(items)
+        print(f"  → {len(items)} items after dedup")
 
-            # 4. 성공 처리
-            self._mark_success()
+        # ── 5. references 저장 ─────────────────────────
+        print("[STEP 5] Supabase references 저장")
+        saved_refs = upsert_references(items)
 
-        except Exception as e:
-            self._mark_failed(e)
-            raise
+        # ── 6. 청킹 ────────────────────────────────────
+        print("[STEP 6] 문서 청킹")
+        chunks = chunk_items(items)
+        stats["chunks"] = len(chunks)
+        print(f"  → {len(chunks)} chunks created")
 
-    # -----------------------------
-    # Run 상태 관리
-    # -----------------------------
+        # ── 7. 임베딩 ──────────────────────────────────
+        print("[STEP 7] 임베딩 생성 (OpenAI)")
+        chunks_with_embedding = embed_chunks(chunks)
+        stats["embedded"] = sum(1 for c in chunks_with_embedding if c.get("embedding"))
+        print(f"  → {stats['embedded']} chunks embedded")
 
-    def _create_run_record(self):
-        self.supabase.table("pipeline_runs").insert({
-            "run_id": self.run_id,
-            "run_date": self.run_date,
-            "pipeline_version": self.pipeline_version,
-            "status": "running",
-            "started_at": "now()"
-        }).execute()
+        # ── 8. reference_chunks 저장 ───────────────────
+        print("[STEP 8] reference_chunks 저장")
+        insert_chunks(chunks_with_embedding, saved_refs, items)
 
-    def _mark_success(self):
-        self.supabase.table("pipeline_runs").update({
-            "status": "success",
-            "finished_at": "now()"
-        }).eq("run_id", self.run_id).execute()
+        # ── 9. 16축 스코어링 ───────────────────────────
+        print("[STEP 9] 16축 스코어링 (GPT-4o mini)")
+        scores = score_items(items)
+        stats["scored"] = len(scores)
+        print(f"  → {len(scores)} items scored")
 
-    def _mark_failed(self, error):
-        self.supabase.table("pipeline_runs").update({
-            "status": "failed",
-            "error_message": str(error),
-            "stack_trace": traceback.format_exc(),
-            "finished_at": "now()"
-        }).eq("run_id", self.run_id).execute()
+        # ── 10. axis_scores 저장 ───────────────────────
+        print("[STEP 10] axis_scores 저장")
+        upsert_axis_scores(scores, saved_refs, items)
+
+        # ── 11. 산업 패턴 누적 ─────────────────────────
+        print("[STEP 11] 산업 패턴 누적")
+        patterns = compute_industry_averages(scores, items)
+        stats["patterns"] = len(patterns)
+        print(f"  → {len(patterns)} industry patterns computed")
+
+        # ── 12. industry_patterns 저장 ─────────────────
+        print("[STEP 12] industry_patterns 저장")
+        upsert_industry_patterns(patterns)
+
+        # ── 13. retrieval_logs 저장 ────────────────────
+        print("[STEP 13] retrieval_logs 저장")
+        insert_retrieval_logs(logs)
+
+        # ── 완료 ───────────────────────────────────────
+        mark_run_success(run_id, stats)
+        print(f"\n[PIPELINE] ✅ 완료: {stats}")
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        mark_run_failed(run_id, str(e), tb)
+        print(f"\n[PIPELINE] ❌ 실패: {e}")
+        raise
 
 
 if __name__ == "__main__":
-    runner = DailyPipelineRunner()
-    runner.run()
+    run()
