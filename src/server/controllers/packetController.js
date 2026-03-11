@@ -28,6 +28,7 @@ import { generatePrompts } from "../services/moduleB/promptGenerator.js";
 import { composePacket } from "../services/moduleB/packetComposer.js";
 import { saveBrief, saveStrategiesAndPrompts, saveMatches } from "../services/moduleB/packetSaver.js";
 import { crawlCompetitors, formatCompetitorContext } from "../services/moduleB/competitorCrawler.js";
+import { discoverCompetitorUrls } from "../services/moduleB/competitorDiscoverer.js";
 
 export async function generatePacket(req, res) {
   try {
@@ -79,7 +80,7 @@ export async function generatePacket(req, res) {
 
     // ── 5. 16축 재랭킹 ────────────────────────────
     console.log("[B-5] 16축 재랭킹");
-    const topRefs = await rerank(filtered);
+    const topRefs = await rerank(filtered, parsed);
 
     // ── 6. UX 근거 검색 ───────────────────────────
     console.log("[B-6] UX 근거 검색");
@@ -87,9 +88,16 @@ export async function generatePacket(req, res) {
 
     // ── 7. 경쟁사 크롤링 ──────────────────────────
     console.log("[B-7] 경쟁사 크롤링");
-    const compUrls = typeof brief === "object"
+    let compUrls = typeof brief === "object"
       ? (Array.isArray(brief.comp) ? brief.comp : [brief.comp].filter(Boolean))
       : [];
+
+    // URL 없으면 트렌드 DB + 레퍼런스 기반으로 자동 탐색
+    if (compUrls.length === 0) {
+      console.log("[B-7] 경쟁사 URL 없음 → 자동 탐색");
+      compUrls = await discoverCompetitorUrls(topRefs, parsed);
+    }
+
     const competitorData = await crawlCompetitors(compUrls, parsed);
     const competitorContext = formatCompetitorContext(competitorData);
 

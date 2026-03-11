@@ -1,0 +1,21 @@
+
+[RESCORE] 기존 레퍼런스 전체 재스코어링 시작
+
+[RESCORE] 대상 레퍼런스: 279개
+
+  [20/279] success: 20, failed: 0
+  [40/279] success: 40, failed: 0
+  [60/279] success: 60, failed: 0
+  [80/279] success: 80, failed: 0
+  [100/279] success: 100, failed: 0
+  [120/279] success: 120, failed: 0
+  [140/279] success: 140, failed: 0
+  [160/279] success: 160, failed: 0
+  [180/279] success: 180, failed: 0
+  [200/279] success: 200, failed: 0
+  [220/279] success: 220, failed: 0
+  [240/279] success: 240, failed: 0
+  [260/279] success: 260, failed: 0
+
+[RESCORE] ✅ 완료 — success: 279 / failed: 0 / total: 279
+EXIT:0

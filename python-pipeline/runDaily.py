@@ -21,6 +21,8 @@ Module A 일일 파이프라인 엔트리포인트
 import os
 import sys
 import uuid
+import time
+import argparse
 import traceback
 from datetime import datetime
 from dotenv import load_dotenv
@@ -152,5 +154,73 @@ def run():
         raise
 
 
+def rescore_all(delay: float = 0.3):
+    """
+    DB의 모든 design_references를 새 16축으로 재스코어링
+    017_axis_scores_v2.sql 실행 후 사용
+    """
+    from moduleA.writers.supabaseWriter import get_client
+    sb = get_client()
+
+    print("\n[RESCORE] 기존 레퍼런스 전체 재스코어링 시작\n")
+
+    # 전체 레퍼런스 페이지네이션 조회
+    all_refs, offset, page = [], 0, 100
+    while True:
+        res = sb.table("design_references") \
+            .select("id, title, source_url, industry, domain, body_text") \
+            .range(offset, offset + page - 1).execute()
+        batch = res.data or []
+        all_refs.extend(batch)
+        if len(batch) < page:
+            break
+        offset += page
+
+    total = len(all_refs)
+    print(f"[RESCORE] 대상 레퍼런스: {total}개\n")
+
+    success, failed = 0, 0
+    for i, ref in enumerate(all_refs):
+        item = {
+            "id":        ref["id"],
+            "title":     ref.get("title", ""),
+            "source_url":ref.get("source_url", ""),
+            "industry":  ref.get("industry", ""),
+            "domain":    ref.get("domain", ""),
+            "body_text": ref.get("body_text", ""),
+        }
+        scores = score_item(item)
+        if not scores:
+            print(f"  ✗ 실패: {ref.get('source_url', ref['id'])}")
+            failed += 1
+            continue
+
+        row = {"reference_id": ref["id"]}
+        row.update({k: v for k, v in scores.items() if k != "reference_id"})
+        try:
+            sb.table("axis_scores").upsert(row, on_conflict="reference_id").execute()
+            success += 1
+        except Exception as e:
+            print(f"  ✗ upsert 실패: {e}")
+            failed += 1
+
+        if (i + 1) % 20 == 0:
+            print(f"  [{i+1}/{total}] success: {success}, failed: {failed}")
+        time.sleep(delay)
+
+    print(f"\n[RESCORE] ✅ 완료 — success: {success} / failed: {failed} / total: {total}")
+
+
 if __name__ == "__main__":
-    run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--rescore-all", action="store_true",
+                        help="DB의 모든 레퍼런스를 새 16축으로 재스코어링")
+    parser.add_argument("--delay", type=float, default=0.3,
+                        help="API 호출 간격(초), 기본 0.3")
+    args = parser.parse_args()
+
+    if args.rescore_all:
+        from moduleA.scorer.axisScorer import score_item
+        rescore_all(delay=args.delay)
+    else:
+        run()
