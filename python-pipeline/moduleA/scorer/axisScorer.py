@@ -17,6 +17,7 @@ Module A - Scorer
 import os
 import json
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional
 
 from openai import OpenAI
@@ -108,16 +109,23 @@ def score_item(item: Dict) -> Optional[Dict]:
         return None
 
 
-def score_items(items: List[Dict], delay: float = 0.3) -> List[Dict]:
+def score_items(items: List[Dict], max_workers: int = 8) -> List[Dict]:
     """
     레퍼런스 리스트 → 스코어 리스트 (None 제외)
+    ThreadPoolExecutor로 병렬 처리 (순차 대비 ~6-8배 속도)
     """
     results = []
-    for i, item in enumerate(items):
-        score = score_item(item)
-        if score:
-            results.append(score)
-        if i % 20 == 0:
-            print(f"[SCORER] {i}/{len(items)} scored")
-        time.sleep(delay)
+    completed = 0
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(score_item, item): item for item in items}
+        for future in as_completed(futures):
+            completed += 1
+            score = future.result()
+            if score:
+                results.append(score)
+            if completed % 20 == 0:
+                print(f"[SCORER] {completed}/{len(items)} scored")
+
+    print(f"[SCORER] 완료: {len(results)}/{len(items)}")
     return results

@@ -24,6 +24,7 @@ export function composePacket({
   topRefs,
   uxEvidence,
   competitorData = [],
+  pinterestImages = [],
   strategies,
   prompts,
 }) {
@@ -71,7 +72,9 @@ export function composePacket({
     recommended_references,
     ux_evidence: uxEvidence,
     competitors: competitorData,
+    pinterest_images: pinterestImages,
     strategies: strategy_entries,
     prompt_pack,
+    ux_patterns: strategies.ux_patterns ?? { baseline: [], trend: [] },
   };
 }

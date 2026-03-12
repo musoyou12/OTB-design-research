@@ -237,3 +237,31 @@ def mark_run_failed(run_id: str, error: str, trace: str) -> None:
         "error_message": error,
         "stack_trace": trace,
     }).eq("run_id", run_id).execute()
+
+
+def get_existing_chunk_hashes() -> set:
+    """
+    reference_chunks 테이블에서 chunk_hash 목록 조회 → set 반환.
+    embed_chunks 중복 스킵에 사용.
+    chunk_hash 컬럼이 없으면 빈 set 반환 (하위 호환).
+    """
+    sb = get_client()
+    try:
+        hashes = set()
+        offset, page = 0, 1000
+        while True:
+            res = sb.table("reference_chunks") \
+                .select("chunk_hash") \
+                .not_.is_("chunk_hash", "null") \
+                .range(offset, offset + page - 1) \
+                .execute()
+            batch = res.data or []
+            hashes.update(r["chunk_hash"] for r in batch if r.get("chunk_hash"))
+            if len(batch) < page:
+                break
+            offset += page
+        print(f"[EMBED] 기존 chunk_hash {len(hashes)}개 로드")
+        return hashes
+    except Exception as e:
+        print(f"[EMBED] chunk_hash 조회 실패 (스킵 없이 진행): {e}")
+        return set()

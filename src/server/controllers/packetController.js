@@ -29,6 +29,7 @@ import { composePacket } from "../services/moduleB/packetComposer.js";
 import { saveBrief, saveStrategiesAndPrompts, saveMatches } from "../services/moduleB/packetSaver.js";
 import { crawlCompetitors, formatCompetitorContext } from "../services/moduleB/competitorCrawler.js";
 import { discoverCompetitorUrls } from "../services/moduleB/competitorDiscoverer.js";
+import { retrievePinterestImages } from "../services/moduleB/pinterestRetriever.js";
 
 export async function generatePacket(req, res) {
   try {
@@ -66,9 +67,16 @@ export async function generatePacket(req, res) {
     // ── 1. 브리프 파싱 ─────────────────────────────
     console.log("[B-1] 브리프 파싱 완료:", parsed.industry);
 
-    // ── 2. 브리프 임베딩 ───────────────────────────
-    console.log("[B-2] 브리프 임베딩");
-    const embedding = await embedBrief(rawBrief);
+    // ── 2. 브리프 임베딩 + UX 근거 검색 병렬 ────────
+    console.log("[B-2,6] 브리프 임베딩 + UX 근거 병렬");
+    const manualCompUrls = typeof brief === "object"
+      ? (Array.isArray(brief.comp) ? brief.comp : [brief.comp].filter(Boolean))
+      : [];
+
+    const [embedding, uxEvidence] = await Promise.all([
+      embedBrief(rawBrief),
+      retrieveUxEvidence(parsed.keywords),
+    ]);
 
     // ── 3. 벡터 검색 ──────────────────────────────
     console.log("[B-3] 벡터 검색");
@@ -78,27 +86,23 @@ export async function generatePacket(req, res) {
     console.log("[B-4] 산업 필터");
     const filtered = await applyIndustryFilter(candidates, parsed.industry);
 
-    // ── 5. 16축 재랭킹 ────────────────────────────
-    console.log("[B-5] 16축 재랭킹");
-    const topRefs = await rerank(filtered, parsed);
+    // ── 5. 16축 재랭킹 + 경쟁사 URL 탐색 병렬 ────
+    console.log("[B-5,7] 재랭킹 + 경쟁사 URL 탐색 병렬");
+    const [topRefs, discoveredUrls] = await Promise.all([
+      rerank(filtered, parsed),
+      manualCompUrls.length === 0
+        ? (console.log("[B-7] 자동 탐색 시작"), discoverCompetitorUrls([], parsed))
+        : Promise.resolve(manualCompUrls),
+    ]);
 
-    // ── 6. UX 근거 검색 ───────────────────────────
-    console.log("[B-6] UX 근거 검색");
-    const uxEvidence = await retrieveUxEvidence(parsed.keywords);
+    const compUrls = manualCompUrls.length > 0 ? manualCompUrls : discoveredUrls;
 
-    // ── 7. 경쟁사 크롤링 ──────────────────────────
-    console.log("[B-7] 경쟁사 크롤링");
-    let compUrls = typeof brief === "object"
-      ? (Array.isArray(brief.comp) ? brief.comp : [brief.comp].filter(Boolean))
-      : [];
-
-    // URL 없으면 트렌드 DB + 레퍼런스 기반으로 자동 탐색
-    if (compUrls.length === 0) {
-      console.log("[B-7] 경쟁사 URL 없음 → 자동 탐색");
-      compUrls = await discoverCompetitorUrls(topRefs, parsed);
-    }
-
-    const competitorData = await crawlCompetitors(compUrls, parsed);
+    // ── 7. 경쟁사 크롤링 + Pinterest 병렬 ─────────
+    console.log("[B-7] 경쟁사 크롤링 + Pinterest 병렬");
+    const [competitorData, pinterestImages] = await Promise.all([
+      crawlCompetitors(compUrls, parsed),
+      retrievePinterestImages(parsed.keywords, parsed.market, 9),
+    ]);
     const competitorContext = formatCompetitorContext(competitorData);
 
     // ── 8. 전략 생성 ──────────────────────────────
@@ -124,6 +128,7 @@ export async function generatePacket(req, res) {
       topRefs,
       uxEvidence,
       competitorData,
+      pinterestImages,
       strategies,
       prompts,
     });

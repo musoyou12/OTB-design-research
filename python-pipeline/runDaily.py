@@ -46,6 +46,7 @@ from moduleA.writers.supabaseWriter import (
     upsert_references, insert_chunks, upsert_axis_scores,
     upsert_industry_patterns, insert_retrieval_logs,
     upsert_trend_signals, upsert_visual_trends,
+    get_existing_chunk_hashes,
 )
 
 # 기존 공통 유틸 재사용
@@ -110,9 +111,10 @@ def run():
         print(f"  → {len(chunks)} chunks created")
 
         # ── 7. 임베딩 ──────────────────────────────────
-        print("[STEP 7] 임베딩 생성 (OpenAI)")
-        chunks_with_embedding = embed_chunks(chunks)
-        stats["embedded"] = sum(1 for c in chunks_with_embedding if c.get("embedding"))
+        print("[STEP 7] 임베딩 생성 (OpenAI, 중복 스킵)")
+        existing_hashes = get_existing_chunk_hashes()
+        chunks_with_embedding = embed_chunks(chunks, existing_hashes=existing_hashes)
+        stats["embedded"] = sum(1 for c in chunks_with_embedding if c.get("embedding") and not c.get("_skipped"))
         print(f"  → {stats['embedded']} chunks embedded")
 
         # ── 8. reference_chunks 저장 ───────────────────

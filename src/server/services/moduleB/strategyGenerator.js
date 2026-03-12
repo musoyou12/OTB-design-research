@@ -46,6 +46,10 @@ OPTION C — Experimental (미래 시그널)
   • High risk, high potential impact
   • Forward-looking, not yet mainstream
 
+UX PATTERNS (shared across all options — derive from brief context):
+  ux_patterns.baseline (3 items): Standard UX patterns that the majority of brands in this industry/channel use for this goal and target audience. These represent the average market expectation.
+  ux_patterns.trend (3 items): UX patterns driven by the latest trend signals (Google Trends INTENT + Behance/Dribbble HOW). These reflect what is gaining traction right now for this industry.
+
 ${lang === 'ko' ? '모든 응답은 반드시 한국어로 작성하세요.' : 'Write all responses in English.'}
 
 Return ONLY valid JSON:
@@ -67,6 +71,20 @@ Return ONLY valid JSON:
     "design_direction": "string",
     "ux_reasoning": "string",
     "explanation": "string (which rising signals this bets on and the risk/reward)"
+  },
+  "ux_patterns": {
+    "baseline": [
+      {
+        "title": "string (pattern name, e.g. 'Hero proof strip')",
+        "desc": "string (why this pattern is standard for this industry/goal/target/channel)"
+      }
+    ],
+    "trend": [
+      {
+        "title": "string (pattern name, e.g. 'Scroll-triggered ingredient reveal')",
+        "desc": "string (which trend signal drives this pattern right now and why it matters)"
+      }
+    ]
   }
 }`;
 
@@ -83,8 +101,19 @@ function buildUserPrompt(parsed, topRefs, uxEvidence, domainRulesText, trendCont
     .map((e) => `[Evidence] ${e.title}\n${e.content}`)
     .join("\n\n");
 
+  const MARKET_CONTEXT = {
+    KR: "Target market is South Korea. Reflect Korean consumer behavior: high mobile usage, Kakao/Naver ecosystem, preference for clean aesthetics with dense information, trust signals like certifications and reviews are critical.",
+    JP: "Target market is Japan. Reflect Japanese consumer behavior: high attention to detail, dense information layouts are accepted, seasonal sensitivity, trust through brand heritage.",
+    CN: "Target market is China. Reflect Chinese consumer behavior: super-app ecosystem (WeChat/Douyin), live commerce integration, social proof at scale, mobile-first.",
+    US: "Target market is North America. Reflect US consumer behavior: conversion-first layouts, strong CTA hierarchy, social proof through reviews and media logos.",
+    EU: "Target market is Europe. Reflect EU consumer behavior: privacy-conscious, brand sustainability signals, editorial over promotional tone.",
+    GLOBAL: "Target market is global. Apply universally accepted UX conventions.",
+  };
+  const marketNote = MARKET_CONTEXT[parsed.market] || MARKET_CONTEXT.GLOBAL;
+
   return `## Layer 1 — BRIEF
 Industry: ${parsed.industry}
+Target Market: ${parsed.market || "GLOBAL"} — ${marketNote}
 Intent: ${parsed.intent}
 Keywords: ${parsed.keywords?.join(", ")}
 Constraints: ${parsed.constraints?.join(", ")}

@@ -427,6 +427,8 @@ nav.sc{}
         <div class="bf-row"><label class="bf-label">목표 <span class="req">*</span></label><div class="tag-wrap"><div class="tags" id="tags-goal"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="goal"></div></div>
         <div class="bf-row"><label class="bf-label">타깃 고객층 <span class="req">*</span></label><div class="tag-wrap"><div class="tags" id="tags-target"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="target"></div></div>
         <div class="bf-row"><label class="bf-label">채널 <span class="req">*</span></label><div class="tag-wrap"><div class="tags" id="tags-channel"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="channel"></div></div>
+        <div class="bf-row"><label class="bf-label">타겟 시장 <span class="req">*</span></label><select class="bf-input" id="bf-market" style="cursor:pointer"><option value="KR">🇰🇷 한국 (Korea)</option><option value="GLOBAL">🌐 글로벌 (Global)</option><option value="US">🇺🇸 북미 (North America)</option><option value="JP">🇯🇵 일본 (Japan)</option><option value="EU">🇪🇺 유럽 (Europe)</option><option value="CN">🇨🇳 중국 (China)</option></select></div>
+        <div class="bf-row"><label class="bf-label">브랜드 포지셔닝</label><input class="bf-input" type="text" id="bf-positioning" placeholder="ex. 프리미엄 더마 스킨케어, 20대 여성 감성, 미니멀"></div>
         <div class="bf-row"><label class="bf-label">요구사항 <span class="req">*</span></label><div class="tag-wrap"><div class="tags" id="tags-req"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="req"></div></div>
         <div class="bf-row"><label class="bf-label">경쟁사 링크</label><div class="tag-wrap"><div class="tags" id="tags-comp"></div><input class="tag-input" placeholder="Enter 키로 추가" data-target="comp"></div></div>
         <button class="bf-submit" onclick="submitBrief()">확인</button>
@@ -695,6 +697,8 @@ function submitBrief(){
     channel: tagData.channel,
     constraints: tagData.req,
     competitors: tagData.comp,
+    market: document.getElementById('bf-market').value,
+    positioning: document.getElementById('bf-positioning').value.trim(),
     createdAt: new Date().toISOString()
   };
   try{ localStorage.setItem('otb_brief', JSON.stringify(briefData)); }catch(e){}

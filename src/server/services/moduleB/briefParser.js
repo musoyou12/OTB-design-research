@@ -28,6 +28,7 @@ Return ONLY valid JSON with these fields:
  */
 export function parseStructuredBrief(briefObj) {
   const toArr = (v) => Array.isArray(v) ? v : (v ? String(v).split(",").map(s => s.trim()).filter(Boolean) : []);
+  const market = briefObj.market || "GLOBAL";
   return {
     industry: toArr(briefObj.industry)[0] || "",
     intent: toArr(briefObj.goal).join(", ") || "",
@@ -39,6 +40,8 @@ export function parseStructuredBrief(briefObj) {
     ].filter(Boolean).slice(0, 10),
     constraints: toArr(briefObj.req || briefObj.constraints),
     lang: (briefObj.locale || 'en').startsWith('ko') ? 'ko' : 'en',
+    market,
+    positioning: briefObj.positioning || "",
   };
 }
 

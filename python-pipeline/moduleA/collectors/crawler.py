@@ -315,13 +315,13 @@ def crawl_news(run_id: str, max_per_source: int = 20):
 # 2️⃣ Google Trends 수집 (INTENT)
 # =========================
 
-def crawl_google_trends(run_id: str):응
+def crawl_google_trends(run_id: str):
     pytrends = TrendReq(hl="en-US", tz=360)
 
     # Enhanced keywords
     keywords = [
         # 기존
-        "web design",머
+        "web design",
         "brand identity",
         "UX design",
         "AI design",
