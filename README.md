@@ -60,7 +60,6 @@
 | `ux_evidence_documents` | UX 아티클 RAG 소스 | `runDaily.py` |
 | `cluster_labels` | 레퍼런스 클러스터 semantic 라벨 | `runDaily.py` (clusterPipeline) |
 | `trend_signals` | Google Trends 수치 | `runDaily.py` |
-| `visual_trends` | Behance/Dribbble 비주얼 트렌드 | `runDaily.py` |
 | `briefs` | 브리프 입력 히스토리 | Module B 실행 시 |
 | `strategy_variants` | 생성된 전략 A/B/C | Module B 실행 시 |
 | `prompt_outputs` | 프롬프트 팩 | Module B 실행 시 |
