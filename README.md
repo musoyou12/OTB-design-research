@@ -56,7 +56,7 @@
 |--------|------|-----------------|
 | `design_references` | 실제 브랜드 사이트 원문 | `brandPipeline.py` |
 | `reference_chunks` | 청크 단위 벡터 (1536d) | `brandPipeline.py` |
-| `axis_scores` | 16축 점수 (0~1) | `brandPipeline.py` |
+| `axis_scores` | 점수화 | `brandPipeline.py` |
 | `ux_evidence_documents` | UX 아티클 RAG 소스 | `runDaily.py` |
 | `cluster_labels` | 레퍼런스 클러스터 semantic 라벨 | `runDaily.py` (clusterPipeline) |
 | `trend_signals` | Google Trends 수치 | `runDaily.py` |
